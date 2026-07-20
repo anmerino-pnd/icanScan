@@ -115,15 +115,7 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
   const cssTransform = `scale(${zoom}) rotate(${rotation}deg)`;
 
   return (
-    <div style={{
-      position: 'fixed',
-      inset: 0,
-      background: 'rgba(45, 45, 45, 0.92)',
-      backdropFilter: 'blur(8px)',
-      zIndex: 1000,
-      display: 'flex',
-      overflow: 'hidden'
-    }}>
+    <div className="studio-modal-container">
       {/* Center Main Viewport */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative' }}>
         {/* Top Header Bar */}
@@ -290,19 +282,7 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
       </div>
 
       {/* Right Inspector Panel - Sketchbook Notes */}
-      <aside className="paper-card-thick" style={{
-        width: '380px',
-        borderLeft: '3px solid var(--border-lead)',
-        borderTop: 'none',
-        borderBottom: 'none',
-        borderRight: 'none',
-        borderRadius: 0,
-        padding: '28px 24px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '24px',
-        background: 'var(--bg-paper)'
-      }}>
+      <aside className="paper-card-thick studio-modal-aside">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <h4 style={{ fontSize: '1.4rem', fontFamily: 'Kalam, cursive' }}>Parámetros Ópticos</h4>
           <button onClick={onClose} className="btn btn-secondary" style={{ padding: '8px' }} title="Cerrar">
@@ -336,7 +316,7 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
           <label style={{ display: 'block', fontSize: '1.05rem', color: 'var(--text-primary)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600 }}>
             <RotateCw size={18} color="var(--accent-red)" /> Rotación de Hoja ({rotation}°)
           </label>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: '10px' }}>
             <button onClick={() => handleRotate(90)} className="btn btn-secondary" style={{ fontSize: '0.95rem', padding: '8px' }}>
               +90° CW
             </button>

@@ -10,21 +10,9 @@ export default function ExportBar({ pages = [], selectedIds = [], exportQuality,
   const totalMb = (totalKb / 1024).toFixed(2);
 
   return (
-    <div className="paper-card-thick" style={{
-      position: 'fixed',
-      bottom: '24px',
-      left: '368px',
-      right: '28px',
-      padding: '18px 26px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      zIndex: 50,
-      background: 'var(--bg-postit)',
-      boxShadow: '0 -4px 0px 0px #2d2d2d, 6px -6px 0px 0px #2d2d2d'
-    }}>
+    <div className="paper-card-thick export-bar">
       {/* Left Info Metrics */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '24px', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{
             width: '46px',

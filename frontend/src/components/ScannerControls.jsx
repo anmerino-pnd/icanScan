@@ -19,17 +19,7 @@ export default function ScannerControls({
   const isVirtual = currentScanner?.type === 'virtual' || selectedDevice === 'virtual-scanner-sim';
 
   return (
-    <aside className="paper-card-thick" style={{ 
-      width: '340px', 
-      padding: '28px 24px 24px 24px', 
-      display: 'flex', 
-      flexDirection: 'column', 
-      gap: '22px', 
-      flexShrink: 0,
-      margin: '20px 0 20px 24px',
-      height: 'calc(100vh - 104px)',
-      overflowY: 'auto'
-    }}>
+    <aside className="paper-card-thick scanner-sidebar">
       {/* Tack Decoration at Top Center */}
       <div className="tack-decoration" />
 

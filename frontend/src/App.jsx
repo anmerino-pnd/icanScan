@@ -323,7 +323,7 @@ export default function App() {
         </div>
 
         {/* Folder / Sketchbook Tab Navigation */}
-        <nav style={{ display: 'flex' }}>
+        <nav style={{ display: 'flex', flexWrap: 'wrap' }}>
           <button 
             onClick={() => setActiveTab('studio')}
             className={`tab-btn ${activeTab === 'studio' ? 'active' : ''}`}
@@ -349,7 +349,7 @@ export default function App() {
       </header>
 
       {/* Main Content Area based on activeTab */}
-      <div style={{ flex: 1, display: 'flex', overflow: 'hidden', position: 'relative' }}>
+      <div className="studio-layout">
         {activeTab === 'studio' && (
           <>
             {/* Left Sidebar - Scanner Parameters */}

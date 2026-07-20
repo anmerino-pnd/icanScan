@@ -16,10 +16,16 @@ logger = logging.getLogger("icanscan")
 
 app = FastAPI(title="Doc Scan PDF Scanner API", version="1.0.0")
 
-# Enable CORS for local desktop interface
+# Enable CORS for local desktop interface and dev server
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "app://."
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -27,7 +33,53 @@ app.add_middleware(
 
 # Setup local scans cache directory
 CACHE_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), "..", "..", ".scans_cache")
+COMPRESS_CACHE_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), "..", "..", ".compress_cache")
 os.makedirs(CACHE_DIR, exist_ok=True)
+os.makedirs(COMPRESS_CACHE_DIR, exist_ok=True)
+
+def _cleanup_old_cache(max_age_hours: int = 24):
+    """Purges temporary scan/tool/compressor files older than max_age_hours to prevent disk exhaustion."""
+    import shutil
+    now = time.time()
+    max_age_seconds = max_age_hours * 3600
+    cleaned_files = 0
+    cleaned_bytes = 0
+
+    for target_dir in [CACHE_DIR, COMPRESS_CACHE_DIR]:
+        if not os.path.exists(target_dir):
+            continue
+        for root, dirs, files in os.walk(target_dir, topdown=False):
+            for filename in files:
+                filepath = os.path.join(root, filename)
+                try:
+                    mtime = os.path.getmtime(filepath)
+                    if now - mtime > max_age_seconds:
+                        size = os.path.getsize(filepath)
+                        os.remove(filepath)
+                        cleaned_files += 1
+                        cleaned_bytes += size
+                except Exception as ex:
+                    logger.warning(f"Failed removing old cache file {filepath}: {ex}")
+            # Remove empty directories inside cache folders
+            for dirname in dirs:
+                dirpath = os.path.join(root, dirname)
+                try:
+                    if not os.listdir(dirpath):
+                        os.rmdir(dirpath)
+                except Exception:
+                    pass
+    if cleaned_files > 0:
+        logger.info(f"Startup cache cleanup: removed {cleaned_files} old files ({round(cleaned_bytes / (1024*1024), 2)} MB).")
+
+@app.on_event("startup")
+def on_startup():
+    _cleanup_old_cache(max_age_hours=24)
+
+@app.post("/api/cache/clean")
+def trigger_cache_clean():
+    """Manual trigger to purge all old files from cache."""
+    _cleanup_old_cache(max_age_hours=0)
+    return {"success": True, "message": "Caché temporal purgado completamente"}
 
 # Mount static directory to serve preview images directly
 app.mount("/cache", StaticFiles(directory=CACHE_DIR), name="cache")
@@ -317,8 +369,8 @@ def get_pdf_info(request: PdfInfoRequest):
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.post("/api/tools/upload-temp")
-async def upload_temp_files(files: List[UploadFile] = File(...)):
-    """Receives uploaded files via web input when absolute filesystem paths are not accessible."""
+def upload_temp_files(files: List[UploadFile] = File(...)):
+    """Receives uploaded files via web input when absolute filesystem paths are not accessible (runs in threadpool to avoid blocking event loop)."""
     try:
         import shutil
         import fitz

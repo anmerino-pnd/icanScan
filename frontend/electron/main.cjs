@@ -40,15 +40,23 @@ function waitForServer(url, maxWaitMs = 15000) {
 
 function startPythonBackend() {
   killPort8000(); // Guarantee zero stale python servers on port 8000 before startup
-  const rootDir = path.join(__dirname, '..', '..');
-  console.log('Starting Python backend process from:', rootDir);
   
-  // Run uvicorn via python -m to bypass uv script trampoline canonicalization issues on Windows
-  serverProcess = spawn('uv', ['run', 'python', '-m', 'uvicorn', 'icanscan.main:app', '--host', '127.0.0.1', '--port', '8000'], {
-    cwd: rootDir,
-    shell: true,
-    stdio: 'inherit'
-  });
+  if (app.isPackaged) {
+    const backendExe = path.join(process.resourcesPath, 'backend', 'icanscan-backend', process.platform === 'win32' ? 'icanscan-backend.exe' : 'icanscan-backend');
+    console.log('Starting packaged Python standalone backend from:', backendExe);
+    serverProcess = spawn(backendExe, ['--host', '127.0.0.1', '--port', '8000'], {
+      shell: false,
+      stdio: 'inherit'
+    });
+  } else {
+    const rootDir = path.join(__dirname, '..', '..');
+    console.log('Starting Python dev backend process from:', rootDir);
+    serverProcess = spawn('uv', ['run', 'python', '-m', 'uvicorn', 'icanscan.main:app', '--host', '127.0.0.1', '--port', '8000'], {
+      cwd: rootDir,
+      shell: true,
+      stdio: 'inherit'
+    });
+  }
 
   serverProcess.on('error', (err) => {
     console.error('Failed to spawn Python backend:', err);
@@ -59,8 +67,8 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1420,
     height: 920,
-    minWidth: 1050,
-    minHeight: 650,
+    minWidth: 380,
+    minHeight: 500,
     title: 'Doc Scan PDF Scanner - Studio',
     icon: path.join(__dirname, process.platform === 'win32' ? 'icon.ico' : 'icon.png'),
     backgroundColor: '#0b0d11',

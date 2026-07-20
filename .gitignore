@@ -50,3 +50,8 @@ Thumbs.db
 *.log
 .vscode/
 .idea/
+
+# Packaged standalone binaries and build outputs
+dist-backend/
+frontend/dist/
+frontend/dist-app/

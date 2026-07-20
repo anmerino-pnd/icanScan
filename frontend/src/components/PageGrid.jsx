@@ -78,12 +78,14 @@ export default function PageGrid({
   const allSelected = pages.length > 0 && selectedIds.length === pages.length;
 
   return (
-    <main style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '20px 28px 24px 8px', overflowY: 'auto' }}>
+    <main className="page-grid-area">
       {/* Top Bulk Action Bar */}
       <div className="paper-card" style={{ 
         display: 'flex', 
         alignItems: 'center', 
         justifyContent: 'space-between', 
+        flexWrap: 'wrap',
+        gap: '12px',
         padding: '14px 20px', 
         marginBottom: '24px'
       }}>
@@ -123,7 +125,7 @@ export default function PageGrid({
         <SortableContext items={pages.map(p => p.id)} strategy={rectSortingStrategy}>
           <div style={{ 
             display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', 
+            gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 260px), 1fr))', 
             gap: '24px',
             paddingBottom: '120px'
           }}>
