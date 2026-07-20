@@ -62,6 +62,7 @@ function createWindow() {
     minWidth: 1050,
     minHeight: 650,
     title: 'Doc Scan PDF Scanner - Studio',
+    icon: path.join(__dirname, process.platform === 'win32' ? 'icon.ico' : 'icon.png'),
     backgroundColor: '#0b0d11',
     autoHideMenuBar: true,
     webPreferences: {
