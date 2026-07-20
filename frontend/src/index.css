@@ -238,6 +238,7 @@ h1, h2, h3, h4, h5, h6 {
 /* Custom Range Sliders */
 input[type=range] {
   -webkit-appearance: none;
+  appearance: none;
   width: 100%;
   background: transparent;
 }
@@ -260,6 +261,7 @@ input[type=range]::-webkit-slider-thumb {
   border: 2px solid var(--border-lead);
   cursor: pointer;
   -webkit-appearance: none;
+  appearance: none;
   margin-top: -8px;
   box-shadow: 2px 2px 0px 0px #2d2d2d;
   transition: transform 0.1s ease;
