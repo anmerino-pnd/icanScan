@@ -125,12 +125,13 @@ def extract_pdf_pages_to_images(pdf_path: str, range_spec: str, format_type: str
             else:
                 pix.save(filepath)
                 
-            size_kb = round(os.path.getsize(filepath) / 1024, 1)
+            size_mb = round(os.path.getsize(filepath) / (1024 * 1024), 2)
             extracted_items.append({
                 "page_num": pnum,
                 "filename": filename,
                 "url": f"/cache/tools/{task_id}/{filename}",
-                "size_kb": size_kb,
+                "size_mb": size_mb,
+                "size_kb": round(os.path.getsize(filepath) / 1024, 1),
                 "width": pix.width,
                 "height": pix.height
             })
@@ -243,12 +244,13 @@ def split_or_extract_pdf_ranges(pdf_path: str, range_spec: str) -> Tuple[List[Di
             new_doc.save(filepath)
             new_doc.close()
             
-            size_kb = round(os.path.getsize(filepath) / 1024, 1)
+            size_mb = round(os.path.getsize(filepath) / (1024 * 1024), 2)
             extracted_pdfs.append({
                 "label": f"Páginas {label}",
                 "filename": filename,
                 "url": f"/cache/tools/{task_id}/{filename}",
-                "size_kb": size_kb,
+                "size_mb": size_mb,
+                "size_kb": round(os.path.getsize(filepath) / 1024, 1),
                 "page_count": len(page_nums)
             })
             zf.write(filepath, arcname=filename)

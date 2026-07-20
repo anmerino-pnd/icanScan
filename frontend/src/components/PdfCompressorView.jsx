@@ -152,14 +152,61 @@ export default function PdfCompressorView({ onShowModal }) {
     }
   };
 
-  const handleDownloadSingle = (file) => {
-    const url = `${API_BASE}/api/compress/download/${file.id}`;
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = file.compressed_path ? `comprimido_${file.filename}` : file.filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+  const handleDownloadSingle = async (file) => {
+    const url = `/api/compress/download/${file.id}`;
+    const filename = file.compressed_path ? `comprimido_${file.filename}` : file.filename;
+
+    const saveFn = window.electronAPI?.saveFileDialog || window.pywebview?.api?.save_file_dialog || window.pywebview?.api?.save_pdf_dialog;
+    if (saveFn) {
+      try {
+        const chosenPath = await saveFn(filename);
+        if (chosenPath) {
+          const res = await fetch(`${API_BASE}/api/tools/save-to-path`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ source_url: url, target_path: chosenPath })
+          });
+          if (res.ok) {
+            onShowModal && onShowModal({ title: "PDF Guardado", message: `El documento comprimido se ha guardado exitosamente en:\n${chosenPath}` });
+          }
+        }
+        return;
+      } catch (err) {
+        console.error("Save dialog error:", err);
+      }
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}${url}`);
+      if (!res.ok) return;
+      const blob = await res.blob();
+      
+      if ('showSaveFilePicker' in window) {
+        try {
+          const handle = await window.showSaveFilePicker({
+            suggestedName: filename,
+            types: [{ description: 'Documento PDF', accept: { 'application/pdf': ['.pdf'] } }]
+          });
+          const writable = await handle.createWritable();
+          await writable.write(blob);
+          await writable.close();
+          return;
+        } catch (pickerErr) {
+          if (pickerErr.name === 'AbortError') return;
+        }
+      }
+
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.error("Error downloading file:", err);
+    }
   };
 
   const handleDownloadZip = async () => {
@@ -340,7 +387,12 @@ export default function PdfCompressorView({ onShowModal }) {
                     <h4 style={{ margin: '0 0 4px 0', fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontFamily: 'Kalam, cursive' }}>
                       {file.filename}
                     </h4>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px', fontSize: '1rem', fontFamily: 'Patrick Hand, cursive' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px', fontSize: '1rem', fontFamily: 'Patrick Hand, cursive', flexWrap: 'wrap' }}>
+                      {file.page_count > 0 && (
+                        <span style={{ background: 'var(--bg-card)', padding: '2px 8px', borderRadius: '4px', border: '1px solid var(--border-lead)', fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.9rem' }}>
+                          TOTAL: {file.page_count} PÁG{file.page_count !== 1 ? 'S' : ''}
+                        </span>
+                      )}
                       <span style={{ color: 'var(--text-secondary)' }}>Original: {file.original_size_mb} MB</span>
                       {isCompressed && (
                         <span style={{ color: 'var(--accent-blue)', fontWeight: 600 }}>

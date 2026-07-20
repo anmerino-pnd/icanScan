@@ -303,6 +303,7 @@ def get_pdf_info(request: PdfInfoRequest):
         info = {
             "page_count": len(doc),
             "filename": os.path.basename(request.pdf_path),
+            "size_mb": round(os.path.getsize(request.pdf_path) / (1024 * 1024), 2),
             "size_kb": round(os.path.getsize(request.pdf_path) / 1024, 1)
         }
         doc.close()
@@ -332,6 +333,7 @@ async def upload_temp_files(files: List[UploadFile] = File(...)):
                     info_dict[file_path] = {
                         "page_count": len(doc),
                         "filename": file.filename,
+                        "size_mb": round(os.path.getsize(file_path) / (1024 * 1024), 2),
                         "size_kb": round(os.path.getsize(file_path) / 1024, 1)
                     }
                     doc.close()
@@ -382,6 +384,41 @@ def split_pdf_multi_ranges(request: SplitPdfRequest):
         logger.error(f"Error splitting PDF: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
+class ToolSaveToPathRequest(BaseModel):
+    source_url: str
+    target_path: str
+
+@app.post("/api/tools/save-to-path")
+def save_tool_output_to_path(request: ToolSaveToPathRequest):
+    try:
+        import shutil
+        rel_path = request.source_url.lstrip("/")
+        if rel_path.startswith("cache/tools/"):
+            parts = rel_path.split("/")
+            source_file = os.path.join(pdf_tools._get_tools_cache_dir(), parts[2], parts[3])
+        elif rel_path.startswith("cache/compress/") or rel_path.startswith("api/compress/download/"):
+            file_id = rel_path.split("/")[-1]
+            if file_id in pdf_compressor.COMPRESS_REGISTRY:
+                info = pdf_compressor.COMPRESS_REGISTRY[file_id]
+                source_file = info.get("compressed_path") or info.get("original_path")
+            else:
+                raise HTTPException(status_code=404, detail="Archivo no encontrado en registro")
+        else:
+            source_file = os.path.join(os.path.abspath(os.path.dirname(__file__)), "..", "..", rel_path)
+            
+        if not source_file or not os.path.exists(source_file):
+            raise HTTPException(status_code=404, detail="El archivo generado no se encontró en el servidor")
+            
+        target_dir = os.path.dirname(request.target_path)
+        if target_dir:
+            os.makedirs(target_dir, exist_ok=True)
+            
+        shutil.copyfile(source_file, request.target_path)
+        return {"success": True, "saved_path": request.target_path}
+    except Exception as e:
+        logger.error(f"Error saving tool output to path: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/api/tools/download/{task_id}/{filename}")
 def download_tool_file(task_id: str, filename: str):
     file_path = os.path.join(pdf_tools._get_tools_cache_dir(), task_id, filename)
@@ -397,6 +434,37 @@ if os.path.exists(FRONTEND_DIST):
 class DesktopApi:
     def __init__(self):
         self.window = None
+
+    def save_file_dialog(self, suggested_filename: str = "descarga.pdf") -> str:
+        """Opens native Windows Save As dialog with dynamic filter based on suggested extension."""
+        if not self.window:
+            return ""
+        try:
+            import webview
+            ext = suggested_filename.split(".")[-1].lower() if "." in suggested_filename else "pdf"
+            if ext == "pdf":
+                file_types = ("Documento PDF (*.pdf)", "Todos los archivos (*.*)")
+            elif ext == "zip":
+                file_types = ("Archivo ZIP (*.zip)", "Todos los archivos (*.*)")
+            elif ext == "png":
+                file_types = ("Imagen PNG (*.png)", "Todos los archivos (*.*)")
+            elif ext in ["jpg", "jpeg"]:
+                file_types = ("Imagen JPG (*.jpg;*.jpeg)", "Todos los archivos (*.*)")
+            else:
+                file_types = ("Todos los archivos (*.*)",)
+            result = self.window.create_file_dialog(
+                webview.SAVE_DIALOG,
+                directory=os.path.expanduser("~"),
+                save_filename=suggested_filename,
+                file_types=file_types
+            )
+            if result and len(result) > 0:
+                if isinstance(result, (list, tuple)):
+                    return str(result[0])
+                return str(result)
+        except Exception as e:
+            logger.error(f"Error opening pywebview save dialog: {e}")
+        return ""
 
     def save_pdf_dialog(self, suggested_filename: str = "DocScan.pdf") -> str:
         """Opens native Windows Save As dialog and returns the selected filepath."""

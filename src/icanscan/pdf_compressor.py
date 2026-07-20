@@ -22,6 +22,14 @@ def get_file_info(file_path: str, original_filename: str = "") -> Dict[str, Any]
     size_bytes = os.path.getsize(file_path)
     size_mb = round(size_bytes / (1024 * 1024), 2)
     
+    page_count = 0
+    try:
+        doc = fitz.open(file_path)
+        page_count = len(doc)
+        doc.close()
+    except Exception as e:
+        logger.warning(f"Could not get page count for {file_path}: {e}")
+    
     file_id = uuid.uuid4().hex[:8]
     filename = original_filename or os.path.basename(file_path)
     
@@ -32,6 +40,7 @@ def get_file_info(file_path: str, original_filename: str = "") -> Dict[str, Any]
         "original_size_bytes": size_bytes,
         "original_size_mb": size_mb,
         "exceeds_drive_25mb": size_mb > 25.0,
+        "page_count": page_count,
         "compressed_path": None,
         "compressed_size_bytes": None,
         "compressed_size_mb": None,

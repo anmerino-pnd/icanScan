@@ -267,13 +267,66 @@ export default function PdfToolsView({ onShowModal }) {
     }
   };
 
-  const triggerDownload = (url, filename) => {
-    const a = document.createElement('a');
-    a.href = `${API_BASE}${url}`;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+  const triggerDownload = async (url, filename) => {
+    const saveFn = window.electronAPI?.saveFileDialog || window.pywebview?.api?.save_file_dialog || window.pywebview?.api?.save_pdf_dialog;
+    if (saveFn) {
+      try {
+        const chosenPath = await saveFn(filename);
+        if (chosenPath) {
+          const res = await fetch(`${API_BASE}/api/tools/save-to-path`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ source_url: url, target_path: chosenPath })
+          });
+          if (res.ok) {
+            onShowModal && onShowModal({ title: "Guardado Exitoso", message: `El archivo ha sido guardado exitosamente en:\n${chosenPath}` });
+          }
+        }
+        return;
+      } catch (err) {
+        console.error("Save dialog error:", err);
+      }
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}${url}`);
+      if (!res.ok) return;
+      const blob = await res.blob();
+      
+      if ('showSaveFilePicker' in window) {
+        try {
+          const ext = filename.split('.').pop()?.toLowerCase();
+          const types = [];
+          if (ext === 'pdf') types.push({ description: 'Documento PDF', accept: { 'application/pdf': ['.pdf'] } });
+          else if (ext === 'zip') types.push({ description: 'Paquete ZIP', accept: { 'application/zip': ['.zip'] } });
+          else if (ext === 'png') types.push({ description: 'Imagen PNG', accept: { 'image/png': ['.png'] } });
+          else if (ext === 'jpg' || ext === 'jpeg') types.push({ description: 'Imagen JPG', accept: { 'image/jpeg': ['.jpg', '.jpeg'] } });
+          
+          const handle = await window.showSaveFilePicker({
+            suggestedName: filename,
+            types: types.length > 0 ? types : undefined
+          });
+          const writable = await handle.createWritable();
+          await writable.write(blob);
+          await writable.close();
+          return;
+        } catch (pickerErr) {
+          if (pickerErr.name === 'AbortError') return;
+        }
+      }
+
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.error("Download error:", err);
+      onShowModal && onShowModal({ title: "Error al descargar", message: "No se pudo descargar el archivo." });
+    }
   };
 
   return (
@@ -389,7 +442,7 @@ export default function PdfToolsView({ onShowModal }) {
                     TOTAL: {extractPdfInfo.page_count} PÁGS
                   </span>
                   <span>
-                    Archivo: <strong>{extractPdfInfo.filename}</strong> ({extractPdfInfo.size_kb} KB). Rango permitido: <strong>1</strong> a <strong>{extractPdfInfo.page_count}</strong>.
+                    Archivo: <strong>{extractPdfInfo.filename}</strong> ({extractPdfInfo.size_mb || (extractPdfInfo.size_kb / 1024).toFixed(2)} MB). Rango permitido: <strong>1</strong> a <strong>{extractPdfInfo.page_count}</strong>.
                   </span>
                 </div>
               )}
@@ -476,7 +529,7 @@ export default function PdfToolsView({ onShowModal }) {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.95rem' }}>
                       <strong style={{ fontFamily: 'Kalam, cursive' }}>Página #{item.page_num}</strong>
-                      <span style={{ color: 'var(--accent-blue)' }}>{item.size_kb} KB</span>
+                      <span style={{ color: 'var(--accent-blue)' }}>{item.size_mb || (item.size_kb / 1024).toFixed(2)} MB</span>
                     </div>
                     <div style={{ display: 'flex', gap: '6px' }}>
                       <button 
@@ -663,7 +716,7 @@ export default function PdfToolsView({ onShowModal }) {
                     TOTAL: {splitPdfInfo.page_count} PÁGS
                   </span>
                   <span>
-                    Archivo: <strong>{splitPdfInfo.filename}</strong> ({splitPdfInfo.size_kb} KB). Puedes dividir desde la página <strong>1</strong> hasta la <strong>{splitPdfInfo.page_count}</strong>.
+                    Archivo: <strong>{splitPdfInfo.filename}</strong> ({splitPdfInfo.size_mb || (splitPdfInfo.size_kb / 1024).toFixed(2)} MB). Puedes dividir desde la página <strong>1</strong> hasta la <strong>{splitPdfInfo.page_count}</strong>.
                   </span>
                 </div>
               )}
@@ -736,7 +789,7 @@ export default function PdfToolsView({ onShowModal }) {
                           {pdfItem.label}
                         </strong>
                         <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                          {pdfItem.page_count} {pdfItem.page_count === 1 ? 'pág' : 'págs'} — {pdfItem.size_kb} KB
+                          {pdfItem.page_count} {pdfItem.page_count === 1 ? 'pág' : 'págs'} — {pdfItem.size_mb || (pdfItem.size_kb / 1024).toFixed(2)} MB
                         </span>
                       </div>
                     </div>
