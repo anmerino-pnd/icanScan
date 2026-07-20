@@ -1,0 +1,25 @@
+[project]
+name = "icanscan"
+version = "0.1.0"
+authors = [
+    { name = "Angel Merino", email = "acedeno00@gmail.com" }
+]
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.139.2",
+    "img2pdf>=0.6.3",
+    "pillow>=12.3.0",
+    "pydantic>=2.13.4",
+    "pymupdf>=1.28.0",
+    "python-multipart>=0.0.32",
+    "pywebview>=6.2.1",
+    "pywin32>=312",
+    "uvicorn>=0.51.0",
+]
+
+[project.scripts]
+icanscan = "icanscan:main"
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
