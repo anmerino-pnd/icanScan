@@ -3,7 +3,7 @@ import uuid
 import time
 import logging
 from typing import List, Optional
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -66,6 +66,9 @@ class ImagesToPdfRequest(BaseModel):
 class SplitPdfRequest(BaseModel):
     pdf_path: str
     range_spec: str = "1"
+
+class PdfInfoRequest(BaseModel):
+    pdf_path: str
 
 @app.get("/api/scanners")
 def get_scanners():
@@ -290,6 +293,55 @@ def download_compressed_zip(request: CompressZipRequest):
         logger.error(f"Error creating ZIP: {e}")
         raise HTTPException(status_code=500, detail=f"Error al generar ZIP: {str(e)}")
 
+@app.post("/api/tools/pdf-info")
+def get_pdf_info(request: PdfInfoRequest):
+    try:
+        import fitz
+        if not os.path.exists(request.pdf_path):
+            raise HTTPException(status_code=404, detail="Archivo PDF no encontrado en el servidor")
+        doc = fitz.open(request.pdf_path)
+        info = {
+            "page_count": len(doc),
+            "filename": os.path.basename(request.pdf_path),
+            "size_kb": round(os.path.getsize(request.pdf_path) / 1024, 1)
+        }
+        doc.close()
+        return {"success": True, "info": info}
+    except Exception as e:
+        logger.error(f"Error getting PDF info: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/api/tools/upload-temp")
+async def upload_temp_files(files: List[UploadFile] = File(...)):
+    """Receives uploaded files via web input when absolute filesystem paths are not accessible."""
+    try:
+        import shutil
+        import fitz
+        upload_dir = os.path.join(CACHE_DIR, "tools", "uploads", str(uuid.uuid4()))
+        os.makedirs(upload_dir, exist_ok=True)
+        paths = []
+        info_dict = {}
+        for file in files:
+            file_path = os.path.join(upload_dir, file.filename)
+            with open(file_path, "wb") as buffer:
+                shutil.copyfileobj(file.file, buffer)
+            paths.append(file_path)
+            if file.filename.lower().endswith(".pdf"):
+                try:
+                    doc = fitz.open(file_path)
+                    info_dict[file_path] = {
+                        "page_count": len(doc),
+                        "filename": file.filename,
+                        "size_kb": round(os.path.getsize(file_path) / 1024, 1)
+                    }
+                    doc.close()
+                except Exception as ex:
+                    logger.error(f"Error reading uploaded pdf info: {ex}")
+        return {"success": True, "paths": paths, "info_dict": info_dict}
+    except Exception as e:
+        logger.error(f"Error uploading temp files: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/api/tools/extract-images")
 def extract_images_from_pdf(request: ExtractImagesRequest):
     try:
@@ -396,7 +448,7 @@ class DesktopApi:
                 webview.OPEN_DIALOG,
                 allow_multiple=True,
                 directory=os.path.expanduser("~"),
-                file_types=("Imágenes (*.png;*.jpg;*.jpeg)", "Todos los archivos (*.*)")
+                file_types=("Archivos de imagen (*.png;*.jpg;*.jpeg)", "Todos los archivos (*.*)")
             )
             if result and len(result) > 0:
                 if isinstance(result, (list, tuple)):

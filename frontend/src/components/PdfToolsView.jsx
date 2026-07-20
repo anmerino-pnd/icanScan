@@ -12,7 +12,9 @@ import {
   ArrowRight, 
   Sparkles, 
   RefreshCcw,
-  Plus
+  Plus,
+  Eye,
+  X
 } from 'lucide-react';
 
 export default function PdfToolsView({ onShowModal }) {
@@ -20,6 +22,7 @@ export default function PdfToolsView({ onShowModal }) {
 
   // Tab 1 State: Extract Images
   const [extractPdfPath, setExtractPdfPath] = useState('');
+  const [extractPdfInfo, setExtractPdfInfo] = useState(null);
   const [extractRange, setExtractRange] = useState('todas');
   const [extractFormat, setExtractFormat] = useState('PNG');
   const [extractDpi, setExtractDpi] = useState(300);
@@ -36,12 +39,73 @@ export default function PdfToolsView({ onShowModal }) {
 
   // Tab 3 State: Split/Multi-Extract PDF
   const [splitPdfPath, setSplitPdfPath] = useState('');
+  const [splitPdfInfo, setSplitPdfInfo] = useState(null);
   const [splitRanges, setSplitRanges] = useState('1-3, 4, 5-10');
   const [splitting, setSplitting] = useState(false);
   const [splitItems, setSplitItems] = useState([]);
   const [splitZipUrl, setSplitZipUrl] = useState('');
 
+  // Global Inspection Modal State
+  const [inspectingItem, setInspectingItem] = useState(null); // { type: 'image' | 'pdf', url: string, filename: string, title?: string }
+
   const API_BASE = "http://localhost:8000";
+
+  // --- Helper to fetch PDF total pages info ---
+  const fetchPdfInfo = async (path, setInfoFn) => {
+    if (!path) {
+      setInfoFn(null);
+      return;
+    }
+    try {
+      const res = await fetch(`${API_BASE}/api/tools/pdf-info`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pdf_path: path })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setInfoFn(data.info || null);
+      } else {
+        setInfoFn(null);
+      }
+    } catch (err) {
+      console.error("Error fetching PDF info:", err);
+      setInfoFn(null);
+    }
+  };
+
+  // --- Helper to handle Web Input file uploads when native paths are restricted ---
+  const handleWebUpload = async (fileList, onPathsReady, onInfoDictReady) => {
+    const files = Array.from(fileList || []);
+    if (files.length === 0) return;
+    const directPaths = files.map(f => f.path).filter(Boolean);
+    if (directPaths.length === files.length) {
+      onPathsReady(directPaths);
+      if (directPaths[0] && directPaths[0].toLowerCase().endsWith('.pdf') && onInfoDictReady) {
+        fetchPdfInfo(directPaths[0], onInfoDictReady);
+      }
+      return;
+    }
+    const formData = new FormData();
+    files.forEach(f => formData.append('files', f));
+    try {
+      const res = await fetch(`${API_BASE}/api/tools/upload-temp`, {
+        method: 'POST',
+        body: formData
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.paths && data.paths.length > 0) {
+          onPathsReady(data.paths);
+          if (onInfoDictReady && data.info_dict && data.paths[0]) {
+            onInfoDictReady(data.info_dict[data.paths[0]] || null);
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Error uploading fallback files:", err);
+    }
+  };
 
   // --- Handlers for Tab 1: Extract Images ---
   const handleSelectExtractPdf = async () => {
@@ -53,6 +117,7 @@ export default function PdfToolsView({ onShowModal }) {
           setExtractPdfPath(paths[0]);
           setExtractedItems([]);
           setExtractZipUrl('');
+          fetchPdfInfo(paths[0], setExtractPdfInfo);
         }
       } catch (err) {
         console.error("Dialog error:", err);
@@ -160,6 +225,7 @@ export default function PdfToolsView({ onShowModal }) {
           setSplitPdfPath(paths[0]);
           setSplitItems([]);
           setSplitZipUrl('');
+          fetchPdfInfo(paths[0], setSplitPdfInfo);
         }
       } catch (err) {
         console.error("Dialog error:", err);
@@ -212,55 +278,79 @@ export default function PdfToolsView({ onShowModal }) {
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto', padding: '28px 40px', background: 'var(--bg-paper)' }}>
-      {/* Hidden Web Inputs fallback */}
-      <input id="extract-pdf-input" type="file" accept=".pdf" style={{ display: 'none' }} onChange={(e) => e.target.files?.[0]?.path && setExtractPdfPath(e.target.files[0].path)} />
-      <input id="split-pdf-input" type="file" accept=".pdf" style={{ display: 'none' }} onChange={(e) => e.target.files?.[0]?.path && setSplitPdfPath(e.target.files[0].path)} />
-      <input id="img-to-pdf-input" type="file" accept=".png,.jpg,.jpeg" multiple style={{ display: 'none' }} onChange={(e) => {
-        const paths = Array.from(e.target.files || []).map(f => f.path).filter(Boolean);
-        if (paths.length > 0) setSelectedImages(prev => [...prev, ...paths]);
-      }} />
+      {/* Hidden Web Inputs fallback with auto-upload support */}
+      <input 
+        id="extract-pdf-input" 
+        type="file" 
+        accept=".pdf" 
+        style={{ display: 'none' }} 
+        onChange={(e) => {
+          handleWebUpload(e.target.files, (paths) => {
+            if (paths[0]) {
+              setExtractPdfPath(paths[0]);
+              setExtractedItems([]);
+              setExtractZipUrl('');
+            }
+          }, setExtractPdfInfo);
+        }} 
+      />
+      <input 
+        id="split-pdf-input" 
+        type="file" 
+        accept=".pdf" 
+        style={{ display: 'none' }} 
+        onChange={(e) => {
+          handleWebUpload(e.target.files, (paths) => {
+            if (paths[0]) {
+              setSplitPdfPath(paths[0]);
+              setSplitItems([]);
+              setSplitZipUrl('');
+            }
+          }, setSplitPdfInfo);
+        }} 
+      />
+      <input 
+        id="img-to-pdf-input" 
+        type="file" 
+        accept=".png,.jpg,.jpeg" 
+        multiple 
+        style={{ display: 'none' }} 
+        onChange={(e) => {
+          handleWebUpload(e.target.files, (paths) => {
+            if (paths && paths.length > 0) {
+              setSelectedImages(prev => [...prev, ...paths]);
+              setConvertedPdfUrl('');
+            }
+          });
+        }} 
+      />
 
-      {/* Header Banner */}
-      <div style={{ marginBottom: '26px' }}>
-        <h2 style={{ fontFamily: 'Kalam, cursive', fontSize: '2rem', fontWeight: 700, margin: '0 0 6px 0', color: 'var(--text-primary)' }}>
-          Caja de Herramientas y Extracción PDF
-        </h2>
-        <p style={{ margin: 0, fontSize: '1.15rem', color: 'var(--text-secondary)', fontFamily: 'Patrick Hand, cursive' }}>
-          Convierte, extrae y divide páginas de tus documentos de manera rápida, clara y sin complicaciones.
-        </p>
+      {/* Sub-tab Switcher Banner */}
+      <div style={{ display: 'flex', gap: '16px', marginBottom: '28px', flexWrap: 'wrap' }}>
+        <button 
+          onClick={() => setActiveSubTab('extract_img')} 
+          className={`btn ${activeSubTab === 'extract_img' ? 'btn-primary' : 'btn-secondary'}`}
+          style={{ padding: '12px 22px', fontSize: '1.1rem' }}
+        >
+          <FileImage size={20} /> Extraer Imágenes del PDF
+        </button>
+        <button 
+          onClick={() => setActiveSubTab('images_to_pdf')} 
+          className={`btn ${activeSubTab === 'images_to_pdf' ? 'btn-primary' : 'btn-secondary'}`}
+          style={{ padding: '12px 22px', fontSize: '1.1rem' }}
+        >
+          <ImageIcon size={20} /> Unir Imágenes en PDF
+        </button>
+        <button 
+          onClick={() => setActiveSubTab('split_pdf')} 
+          className={`btn ${activeSubTab === 'split_pdf' ? 'btn-primary' : 'btn-secondary'}`}
+          style={{ padding: '12px 22px', fontSize: '1.1rem' }}
+        >
+          <Scissors size={20} /> Dividir y Separar Multi-PDFs
+        </button>
       </div>
 
-      {/* Sub-Tabs / Category Navigation */}
-      <div style={{ display: 'flex', gap: '14px', marginBottom: '28px', borderBottom: '3px solid var(--border-lead)', paddingBottom: '14px', flexWrap: 'wrap' }}>
-        <button
-          onClick={() => setActiveSubTab('extract_img')}
-          className={`btn ${activeSubTab === 'extract_img' ? 'btn-amber' : 'btn-primary'}`}
-          style={{ padding: '12px 22px', fontSize: '1.15rem', fontFamily: 'Kalam, cursive', fontWeight: 700 }}
-        >
-          <FileImage size={20} color="var(--accent-red)" />
-          1. Extraer Imágenes de PDF
-        </button>
-
-        <button
-          onClick={() => setActiveSubTab('images_to_pdf')}
-          className={`btn ${activeSubTab === 'images_to_pdf' ? 'btn-amber' : 'btn-primary'}`}
-          style={{ padding: '12px 22px', fontSize: '1.15rem', fontFamily: 'Kalam, cursive', fontWeight: 700 }}
-        >
-          <ImageIcon size={20} color="var(--accent-blue)" />
-          2. Unir Imágenes en un PDF
-        </button>
-
-        <button
-          onClick={() => setActiveSubTab('split_pdf')}
-          className={`btn ${activeSubTab === 'split_pdf' ? 'btn-amber' : 'btn-primary'}`}
-          style={{ padding: '12px 22px', fontSize: '1.15rem', fontFamily: 'Kalam, cursive', fontWeight: 700 }}
-        >
-          <Scissors size={20} color="var(--accent-red)" />
-          3. Dividir y Extraer Multi-PDF
-        </button>
-      </div>
-
-      {/* ================= SECTION 1: EXTRACT IMAGES FROM PDF ================= */}
+      {/* ================= SECTION 1: EXTRACT IMAGES ================= */}
       {activeSubTab === 'extract_img' && (
         <div className="paper-card-thick" style={{ padding: '30px', display: 'flex', flexDirection: 'column', gap: '24px', background: 'var(--bg-surface)' }}>
           <div className="tack-decoration" />
@@ -268,14 +358,13 @@ export default function PdfToolsView({ onShowModal }) {
           <div>
             <h3 style={{ fontSize: '1.6rem', fontFamily: 'Kalam, cursive', margin: '0 0 6px 0', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <FileImage size={24} color="var(--accent-red)" />
-              Extraer páginas de un PDF en formato PNG o JPG
+              Extraer páginas de un documento PDF como archivos PNG o JPG
             </h3>
             <p style={{ fontSize: '1.05rem', color: 'var(--text-secondary)', margin: 0, fontFamily: 'Patrick Hand, cursive' }}>
-              Elige un PDF, indica si deseas todas las páginas o solo algunas en específico (ej. <strong>1-3, 5</strong>) y obtén imágenes de alta resolución.
+              Selecciona tu documento PDF, indica si deseas extraer todas las páginas o solo algunas en particular y elige la resolución de salida.
             </p>
           </div>
 
-          {/* Form Row */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', alignItems: 'flex-end' }}>
             <div>
               <label style={{ display: 'block', fontSize: '1.05rem', fontWeight: 600, marginBottom: '8px', color: 'var(--text-primary)' }}>
@@ -294,6 +383,16 @@ export default function PdfToolsView({ onShowModal }) {
                   <FolderOpen size={18} />
                 </button>
               </div>
+              {extractPdfInfo && (
+                <div className="postit-card" style={{ padding: '10px 14px', fontSize: '0.98rem', display: 'flex', alignItems: 'center', gap: '10px', transform: 'rotate(0.4deg)', marginTop: '10px', background: '#fff9c4' }}>
+                  <span className="stamp-badge" style={{ background: 'var(--accent-blue)', color: '#fff', fontSize: '0.8rem', padding: '2px 8px' }}>
+                    TOTAL: {extractPdfInfo.page_count} PÁGS
+                  </span>
+                  <span>
+                    Archivo: <strong>{extractPdfInfo.filename}</strong> ({extractPdfInfo.size_kb} KB). Rango permitido: <strong>1</strong> a <strong>{extractPdfInfo.page_count}</strong>.
+                  </span>
+                </div>
+              )}
             </div>
 
             <div>
@@ -349,7 +448,7 @@ export default function PdfToolsView({ onShowModal }) {
             <div style={{ marginTop: '16px', borderTop: '2px dashed var(--border-lead)', paddingTop: '22px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px', flexWrap: 'wrap', gap: '12px' }}>
                 <h4 style={{ fontSize: '1.35rem', fontFamily: 'Kalam, cursive', margin: 0 }}>
-                  ¡Listo! {extractedItems.length} {extractedItems.length === 1 ? 'imagen extraída' : 'imágenes extraídas'} con éxito:
+                  ¡Listo! {extractedItems.length} {extractedItems.length === 1 ? 'imagen extraída' : 'imágenes extraídas'} con éxito (haz clic para inspeccionar):
                 </h4>
                 {extractZipUrl && (
                   <button 
@@ -365,20 +464,37 @@ export default function PdfToolsView({ onShowModal }) {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: '18px' }}>
                 {extractedItems.map((item, idx) => (
                   <div key={idx} className="paper-card" style={{ padding: '12px', background: '#ffffff', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    <div style={{ height: '160px', background: '#f8f6f0', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', border: '1px solid var(--border-lead)' }}>
+                    <div 
+                      style={{ height: '160px', background: '#f8f6f0', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', border: '1px solid var(--border-lead)', cursor: 'pointer', position: 'relative' }}
+                      onClick={() => setInspectingItem({ type: 'image', url: item.url, filename: item.filename, title: `Página #${item.page_num} (${item.filename})` })}
+                      title="Haz clic para inspeccionar imagen en grande"
+                    >
                       <img src={`${API_BASE}${item.url}`} alt={item.filename} style={{ maxWidth: '90%', maxHeight: '90%', objectFit: 'contain' }} />
+                      <div style={{ position: 'absolute', bottom: '6px', right: '6px', background: 'rgba(0,0,0,0.75)', color: '#fff', padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <Eye size={12} /> Ver
+                      </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.95rem' }}>
                       <strong style={{ fontFamily: 'Kalam, cursive' }}>Página #{item.page_num}</strong>
                       <span style={{ color: 'var(--accent-blue)' }}>{item.size_kb} KB</span>
                     </div>
-                    <button 
-                      onClick={() => triggerDownload(item.url, item.filename)}
-                      className="btn btn-secondary" 
-                      style={{ width: '100%', padding: '6px', fontSize: '0.95rem' }}
-                    >
-                      <Download size={16} /> Descargar {extractFormat}
-                    </button>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <button 
+                        onClick={() => setInspectingItem({ type: 'image', url: item.url, filename: item.filename, title: `Página #${item.page_num} (${item.filename})` })}
+                        className="btn btn-secondary" 
+                        style={{ flex: 1, padding: '6px', fontSize: '0.9rem' }}
+                        title="Ver previsualización en grande"
+                      >
+                        <Eye size={16} /> Ver
+                      </button>
+                      <button 
+                        onClick={() => triggerDownload(item.url, item.filename)}
+                        className="btn btn-primary" 
+                        style={{ flex: 1.3, padding: '6px', fontSize: '0.9rem', background: 'var(--accent-red)', color: '#fff' }}
+                      >
+                        <Download size={16} /> Descargar
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -475,7 +591,7 @@ export default function PdfToolsView({ onShowModal }) {
 
           {/* Converted PDF Result */}
           {convertedPdfUrl && (
-            <div className="postit-card" style={{ padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-postit)', transform: 'rotate(0.5deg)' }}>
+            <div className="postit-card" style={{ padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-postit)', transform: 'rotate(0.5deg)', flexWrap: 'wrap', gap: '14px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                 <FileText size={32} color="var(--accent-red)" />
                 <div>
@@ -487,13 +603,22 @@ export default function PdfToolsView({ onShowModal }) {
                   </span>
                 </div>
               </div>
-              <button 
-                onClick={() => triggerDownload(convertedPdfUrl, outputPdfName)}
-                className="btn btn-primary"
-                style={{ background: 'var(--accent-red)', color: '#ffffff', fontFamily: 'Kalam, cursive', fontWeight: 700, padding: '12px 26px' }}
-              >
-                <Download size={20} /> Descargar PDF Unido
-              </button>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button 
+                  onClick={() => setInspectingItem({ type: 'pdf', url: convertedPdfUrl, filename: outputPdfName, title: outputPdfName })}
+                  className="btn btn-secondary"
+                  style={{ padding: '12px 20px', fontSize: '1.1rem' }}
+                >
+                  <Eye size={20} /> Inspeccionar PDF
+                </button>
+                <button 
+                  onClick={() => triggerDownload(convertedPdfUrl, outputPdfName)}
+                  className="btn btn-primary"
+                  style={{ background: 'var(--accent-red)', color: '#ffffff', fontFamily: 'Kalam, cursive', fontWeight: 700, padding: '12px 26px' }}
+                >
+                  <Download size={20} /> Descargar PDF Unido
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -532,6 +657,16 @@ export default function PdfToolsView({ onShowModal }) {
                   <FolderOpen size={18} />
                 </button>
               </div>
+              {splitPdfInfo && (
+                <div className="postit-card" style={{ padding: '10px 14px', fontSize: '0.98rem', display: 'flex', alignItems: 'center', gap: '10px', transform: 'rotate(-0.4deg)', marginTop: '10px', background: '#fff9c4' }}>
+                  <span className="stamp-badge" style={{ background: 'var(--accent-red)', color: '#fff', fontSize: '0.8rem', padding: '2px 8px' }}>
+                    TOTAL: {splitPdfInfo.page_count} PÁGS
+                  </span>
+                  <span>
+                    Archivo: <strong>{splitPdfInfo.filename}</strong> ({splitPdfInfo.size_kb} KB). Puedes dividir desde la página <strong>1</strong> hasta la <strong>{splitPdfInfo.page_count}</strong>.
+                  </span>
+                </div>
+              )}
             </div>
 
             <div>
@@ -606,18 +741,85 @@ export default function PdfToolsView({ onShowModal }) {
                       </div>
                     </div>
 
-                    <button 
-                      onClick={() => triggerDownload(pdfItem.url, pdfItem.filename)}
-                      className="btn btn-secondary" 
-                      style={{ width: '100%', padding: '8px', fontSize: '1rem', marginTop: 'auto' }}
-                    >
-                      <Download size={18} color="var(--accent-blue)" /> Descargar PDF Extraído
-                    </button>
+                    <div style={{ display: 'flex', gap: '8px', marginTop: 'auto' }}>
+                      <button 
+                        onClick={() => setInspectingItem({ type: 'pdf', url: pdfItem.url, filename: pdfItem.filename, title: `${pdfItem.label} (${pdfItem.filename})` })}
+                        className="btn btn-secondary" 
+                        style={{ flex: 1, padding: '8px', fontSize: '0.95rem' }}
+                      >
+                        <Eye size={16} /> Inspeccionar
+                      </button>
+                      <button 
+                        onClick={() => triggerDownload(pdfItem.url, pdfItem.filename)}
+                        className="btn btn-primary" 
+                        style={{ flex: 1, padding: '8px', fontSize: '0.95rem', background: 'var(--accent-red)', color: '#fff' }}
+                      >
+                        <Download size={16} /> Descargar
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* ================= LIGHTBOX / INSPECTION MODAL ================= */}
+      {inspectingItem && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(11, 13, 17, 0.85)', zIndex: 9999,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px'
+        }}>
+          <div className="paper-card-thick" style={{
+            background: 'var(--bg-paper)', width: '90vw', height: '88vh',
+            display: 'flex', flexDirection: 'column', overflow: 'hidden',
+            position: 'relative', border: '3px solid var(--border-lead)'
+          }}>
+            <div className="tack-decoration" />
+            
+            {/* Modal Header */}
+            <div style={{ padding: '16px 24px', borderBottom: '2px dashed var(--border-lead)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-surface)' }}>
+              <h3 style={{ fontFamily: 'Kalam, cursive', fontSize: '1.4rem', margin: 0, display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-primary)' }}>
+                <Eye size={22} color="var(--accent-red)" />
+                Inspección en grande: {inspectingItem.title || inspectingItem.filename}
+              </h3>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button 
+                  onClick={() => triggerDownload(inspectingItem.url, inspectingItem.filename)}
+                  className="btn btn-primary"
+                  style={{ background: 'var(--accent-red)', color: '#fff', padding: '8px 16px', fontSize: '0.95rem' }}
+                >
+                  <Download size={16} /> Descargar
+                </button>
+                <button 
+                  onClick={() => setInspectingItem(null)}
+                  className="btn btn-secondary"
+                  style={{ padding: '8px 14px', fontSize: '0.95rem' }}
+                >
+                  <X size={18} /> Cerrar
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div style={{ flex: 1, overflow: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', background: '#eef0f4' }}>
+              {inspectingItem.type === 'image' ? (
+                <img 
+                  src={`${API_BASE}${inspectingItem.url}`} 
+                  alt={inspectingItem.filename} 
+                  style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', border: '2px solid var(--border-lead)', borderRadius: 'var(--wobbly-sm)', boxShadow: '4px 4px 0px 0px #2d2d2d', background: '#fff' }} 
+                />
+              ) : (
+                <iframe 
+                  src={`${API_BASE}${inspectingItem.url}`} 
+                  title={inspectingItem.filename}
+                  style={{ width: '100%', height: '100%', border: '2px solid var(--border-lead)', borderRadius: 'var(--wobbly-sm)', background: '#fff' }} 
+                />
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

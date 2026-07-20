@@ -127,6 +127,21 @@ app.whenReady().then(async () => {
     return result.filePaths;
   });
 
+  ipcMain.handle('dialog:openImage', async (event, options = {}) => {
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: options.title || 'Seleccionar Imágenes (PNG/JPG)',
+      properties: ['openFile', 'multiSelections'],
+      filters: [
+        { name: 'Imágenes (*.png, *.jpg, *.jpeg)', extensions: ['png', 'jpg', 'jpeg'] },
+        { name: 'Todos los archivos', extensions: ['*'] }
+      ]
+    });
+    if (result.canceled) {
+      return [];
+    }
+    return result.filePaths;
+  });
+
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
