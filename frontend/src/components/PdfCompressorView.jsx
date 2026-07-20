@@ -36,9 +36,7 @@ export default function PdfCompressorView({ onShowModal }) {
     fetchFiles();
   }, []);
 
-  // Handle picking PDF files natively or via web file input
   const handleSelectFiles = async () => {
-    // 1. Check native Desktop API
     if (
       (window.electronAPI && window.electronAPI.openFileDialog) ||
       (window.pywebview && window.pywebview.api && window.pywebview.api.open_pdf_dialog)
@@ -66,7 +64,6 @@ export default function PdfCompressorView({ onShowModal }) {
       return;
     }
 
-    // 2. Web fallback trigger hidden file input
     document.getElementById("pdf-upload-input").click();
   };
 
@@ -75,8 +72,6 @@ export default function PdfCompressorView({ onShowModal }) {
     if (!selectedFiles || selectedFiles.length === 0) return;
 
     setLoading(true);
-    // Since browser doesn't give absolute paths, we can read/upload directly or if we are local desktop, ask for native dialog
-    // We register paths if available or warn
     const filePaths = [];
     for (let i = 0; i < selectedFiles.length; i++) {
       if (selectedFiles[i].path) {
@@ -101,7 +96,7 @@ export default function PdfCompressorView({ onShowModal }) {
     } else {
       onShowModal && onShowModal({
         title: "Aviso de Selección",
-        message: "Por favor utiliza la aplicación de escritorio para poder procesar archivos pesados del sistema operativo de forma ultra rápida en caché."
+        message: "Por favor utiliza la aplicación de escritorio para poder procesar archivos pesados del sistema operativo en caché de manera rápida."
       });
     }
     setLoading(false);
@@ -189,8 +184,6 @@ export default function PdfCompressorView({ onShowModal }) {
 
       if (res.ok) {
         const blob = await res.blob();
-        
-        // Use native Save As if available
         if ('showSaveFilePicker' in window) {
           try {
             const handle = await window.showSaveFilePicker({
@@ -228,7 +221,7 @@ export default function PdfCompressorView({ onShowModal }) {
   const exceedsCount = files.filter(f => f.exceeds_drive_25mb && (!f.compressed_size_mb || f.compressed_size_mb > 25.0)).length;
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', padding: '28px 40px', background: 'radial-gradient(circle at top right, #131824 0%, #0b0d11 100%)' }}>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto', padding: '28px 40px', background: 'var(--bg-paper)' }}>
       <input 
         id="pdf-upload-input" 
         type="file" 
@@ -241,11 +234,11 @@ export default function PdfCompressorView({ onShowModal }) {
       {/* Top Banner Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px' }}>
         <div>
-          <h2 style={{ fontFamily: 'Outfit, sans-serif', fontSize: '1.75rem', fontWeight: 700, margin: '0 0 6px 0', color: 'var(--text-primary)' }}>
+          <h2 style={{ fontFamily: 'Kalam, cursive', fontSize: '2rem', fontWeight: 700, margin: '0 0 6px 0', color: 'var(--text-primary)' }}>
             Optimización y Compresión para Google Drive
           </h2>
-          <p style={{ margin: 0, fontSize: '0.95rem', color: 'var(--text-secondary)' }}>
-            Reduce el peso de tus documentos PDF por debajo del límite de 25 MB de Drive y adjuntos sin sacrificar la legibilidad de textos.
+          <p style={{ margin: 0, fontSize: '1.15rem', color: 'var(--text-secondary)', fontFamily: 'Patrick Hand, cursive' }}>
+            Reduce el peso de tus documentos PDF por debajo del límite de 25 MB de Drive y adjuntos manteniendo trazos legibles.
           </p>
         </div>
 
@@ -253,24 +246,24 @@ export default function PdfCompressorView({ onShowModal }) {
           <button 
             onClick={handleSelectFiles} 
             disabled={loading}
-            className="btn btn-primary"
-            style={{ padding: '12px 24px', fontSize: '0.95rem' }}
+            className="btn btn-amber"
+            style={{ padding: '12px 26px', fontSize: '1.15rem', fontFamily: 'Kalam, cursive', fontWeight: 700, transform: 'rotate(1deg)' }}
           >
-            <FolderOpen size={18} />
+            <FolderOpen size={20} />
             Seleccionar Documentos PDF
           </button>
         </div>
       </div>
 
       {/* Profile Selector & Metrics Bar */}
-      <div className="glass-panel" style={{ padding: '18px 24px', marginBottom: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+      <div className="paper-card" style={{ padding: '20px 26px', marginBottom: '26px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <Sliders size={18} color="var(--accent-cyan)" />
-          <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Perfil de Reducción:</span>
+          <Sliders size={20} color="var(--accent-red)" />
+          <span style={{ fontSize: '1.1rem', fontWeight: 700, fontFamily: 'Kalam, cursive' }}>Perfil de Reducción:</span>
           <select 
             value={globalMode} 
             onChange={(e) => setGlobalMode(e.target.value)}
-            style={{ minWidth: '280px', fontWeight: 600 }}
+            style={{ minWidth: '320px' }}
           >
             <option value="drive_25mb">Optimización Inteligente Drive (Objetivo menor a 25 MB)</option>
             <option value="medium">Compresión Media Balanceada (JPEG 75% Archivo)</option>
@@ -278,18 +271,18 @@ export default function PdfCompressorView({ onShowModal }) {
           </select>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '26px', fontFamily: 'Patrick Hand, cursive' }}>
           <div>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>Peso Original Total</span>
-            <strong style={{ fontSize: '1.05rem', color: 'var(--text-primary)' }}>{totalOriginalMb} MB</strong>
+            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'block' }}>Peso Original Total</span>
+            <strong style={{ fontSize: '1.3rem', color: 'var(--text-primary)', fontFamily: 'Kalam, cursive' }}>{totalOriginalMb} MB</strong>
           </div>
           <div>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>Peso Final Optimizado</span>
-            <strong style={{ fontSize: '1.05rem', color: 'var(--accent-cyan)' }}>{totalFinalMb} MB</strong>
+            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'block' }}>Peso Final Optimizado</span>
+            <strong style={{ fontSize: '1.3rem', color: 'var(--accent-blue)', fontFamily: 'Kalam, cursive' }}>{totalFinalMb} MB</strong>
           </div>
           <div>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>Alerta Drive (mayor a 25MB)</span>
-            <strong style={{ fontSize: '1.05rem', color: exceedsCount > 0 ? 'var(--accent-danger)' : 'var(--text-secondary)' }}>
+            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'block' }}>Alerta Drive (&gt; 25MB)</span>
+            <strong style={{ fontSize: '1.3rem', color: exceedsCount > 0 ? 'var(--accent-red)' : 'var(--accent-green)', fontFamily: 'Kalam, cursive' }}>
               {exceedsCount} {exceedsCount === 1 ? 'documento excede' : 'documentos exceden'}
             </strong>
           </div>
@@ -297,16 +290,16 @@ export default function PdfCompressorView({ onShowModal }) {
             <button 
               onClick={() => handleCompress(files.map(f => f.id))} 
               disabled={compressing}
-              className="btn btn-amber"
-              style={{ padding: '10px 20px', fontSize: '0.9rem' }}
+              className="btn btn-primary"
+              style={{ padding: '12px 22px', fontSize: '1.1rem', background: 'var(--accent-red)', color: '#ffffff', fontFamily: 'Kalam, cursive', fontWeight: 700 }}
             >
               {compressing ? (
                 <>
-                  <RefreshCcw size={16} className="animate-spin" /> Comprimiendo...
+                  <RefreshCcw size={18} className="animate-spin" /> Comprimiendo...
                 </>
               ) : (
                 <>
-                  <Sparkles size={16} /> Comprimir Todos
+                  <Sparkles size={18} /> Comprimir Todos
                 </>
               )}
             </button>
@@ -315,41 +308,42 @@ export default function PdfCompressorView({ onShowModal }) {
       </div>
 
       {/* Files Grid / Table */}
-      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px', paddingRight: '4px' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px', paddingBottom: '60px' }}>
         {files.length === 0 ? (
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '2px dashed var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: '60px' }}>
-            <FileText size={48} color="var(--text-muted)" style={{ marginBottom: '16px' }} />
-            <h3 style={{ fontFamily: 'Outfit, sans-serif', fontSize: '1.2rem', color: 'var(--text-primary)', margin: '0 0 8px 0' }}>
+          <div className="postit-card" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px', transform: 'rotate(-0.5deg)' }}>
+            <div className="tape-decoration" />
+            <FileText size={56} color="var(--accent-red)" style={{ marginBottom: '16px' }} />
+            <h3 style={{ fontFamily: 'Kalam, cursive', fontSize: '1.6rem', color: 'var(--text-primary)', margin: '0 0 8px 0' }}>
               No hay documentos PDF seleccionados en este momento
             </h3>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', maxWidth: '420px', textAlign: 'center', margin: '0 0 24px 0' }}>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '1.15rem', maxWidth: '460px', textAlign: 'center', margin: '0 0 24px 0', fontFamily: 'Patrick Hand, cursive' }}>
               Añade tus archivos PDF para verificar cuánto peso ocupan y comprimirlos en grupo para que quepan en Google Drive o correo.
             </p>
-            <button onClick={handleSelectFiles} className="btn btn-secondary" style={{ padding: '10px 20px' }}>
-              <FolderOpen size={16} /> Abrir Documentos PDF
+            <button onClick={handleSelectFiles} className="btn btn-secondary" style={{ padding: '12px 24px' }}>
+              <FolderOpen size={18} /> Abrir Documentos PDF
             </button>
           </div>
         ) : (
-          files.map((file) => {
+          files.map((file, i) => {
             const isCompressed = file.status === "compressed" && file.compressed_size_mb;
             const currentMb = isCompressed ? file.compressed_size_mb : file.original_size_mb;
             const exceeds = currentMb > 25.0;
             const reductionPct = isCompressed ? Math.round((1 - file.compressed_size_bytes / file.original_size_bytes) * 100) : 0;
 
             return (
-              <div key={file.id} className="glass-panel" style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
+              <div key={file.id} className="paper-card" style={{ padding: '18px 22px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', transform: `rotate(${i % 2 === 0 ? '-0.5deg' : '0.5deg'})` }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, minWidth: 0 }}>
-                  <div style={{ width: '42px', height: '42px', borderRadius: '10px', background: 'rgba(0, 240, 255, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <FileText size={22} color="var(--accent-cyan)" />
+                  <div style={{ width: '46px', height: '46px', borderRadius: 'var(--wobbly-sm)', background: 'var(--bg-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: '2px solid var(--border-lead)' }}>
+                    <FileText size={24} color="var(--accent-red)" />
                   </div>
                   <div style={{ minWidth: 0, flex: 1 }}>
-                    <h4 style={{ margin: '0 0 4px 0', fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <h4 style={{ margin: '0 0 4px 0', fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontFamily: 'Kalam, cursive' }}>
                       {file.filename}
                     </h4>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.8rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px', fontSize: '1rem', fontFamily: 'Patrick Hand, cursive' }}>
                       <span style={{ color: 'var(--text-secondary)' }}>Original: {file.original_size_mb} MB</span>
                       {isCompressed && (
-                        <span style={{ color: 'var(--accent-cyan)', fontWeight: 600 }}>
+                        <span style={{ color: 'var(--accent-blue)', fontWeight: 600 }}>
                           Final: {file.compressed_size_mb} MB ({reductionPct}% reducido)
                         </span>
                       )}
@@ -358,14 +352,14 @@ export default function PdfCompressorView({ onShowModal }) {
                 </div>
 
                 {/* Status Badges */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
                   {exceeds ? (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(239, 68, 68, 0.15)', color: 'var(--accent-danger)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '6px 12px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 600 }}>
-                      <AlertTriangle size={14} /> Mayor a 25 MB (Drive)
+                    <span className="stamp-badge" style={{ background: 'rgba(255, 77, 77, 0.15)', color: 'var(--accent-red)', transform: 'rotate(-2deg)' }}>
+                      <AlertTriangle size={16} /> Mayor a 25 MB (Drive)
                     </span>
                   ) : (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(34, 197, 94, 0.15)', color: 'var(--accent-green)', border: '1px solid rgba(34, 197, 94, 0.3)', padding: '6px 12px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 600 }}>
-                      <CheckCircle2 size={14} /> Apto para Drive (&lt; 25 MB)
+                    <span className="stamp-badge" style={{ background: 'rgba(22, 163, 74, 0.15)', color: 'var(--accent-green)', transform: 'rotate(1deg)' }}>
+                      <CheckCircle2 size={16} /> Apto para Drive (&lt; 25 MB)
                     </span>
                   )}
 
@@ -375,28 +369,28 @@ export default function PdfCompressorView({ onShowModal }) {
                       onClick={() => handleCompress([file.id])}
                       disabled={compressing}
                       className="btn btn-secondary"
-                      style={{ padding: '8px 14px', fontSize: '0.8rem' }}
+                      style={{ padding: '8px 16px', fontSize: '0.95rem' }}
                       title="Comprimir solo este documento"
                     >
-                      <Sparkles size={14} /> {isCompressed ? 'Re-comprimir' : 'Comprimir'}
+                      <Sparkles size={16} /> {isCompressed ? 'Re-comprimir' : 'Comprimir'}
                     </button>
 
                     <button 
                       onClick={() => handleDownloadSingle(file)}
                       className="btn btn-secondary"
-                      style={{ padding: '8px 14px', fontSize: '0.8rem' }}
+                      style={{ padding: '8px 16px', fontSize: '0.95rem' }}
                       title="Descargar PDF"
                     >
-                      <Download size={14} /> Descargar PDF
+                      <Download size={16} /> Descargar PDF
                     </button>
 
                     <button 
                       onClick={() => handleDelete(file.id)}
                       className="btn btn-secondary"
-                      style={{ padding: '8px', color: 'var(--accent-danger)' }}
+                      style={{ padding: '8px 12px', color: 'var(--accent-red)' }}
                       title="Quitar de la lista"
                     >
-                      <Trash2 size={16} />
+                      <Trash2 size={18} />
                     </button>
                   </div>
                 </div>
@@ -408,14 +402,14 @@ export default function PdfCompressorView({ onShowModal }) {
 
       {/* Bottom ZIP Action Bar */}
       {files.length > 0 && (
-        <div className="glass-panel" style={{ marginTop: '20px', padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(11, 13, 17, 0.94)', border: '1px solid var(--border-subtle)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <Archive size={22} color="var(--accent-cyan)" />
+        <div className="postit-card" style={{ marginTop: '20px', padding: '18px 26px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transform: 'rotate(0.5deg)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <Archive size={28} color="var(--accent-blue)" />
             <div>
-              <strong style={{ fontSize: '1rem', display: 'block', color: 'var(--text-primary)' }}>
+              <strong style={{ fontSize: '1.3rem', display: 'block', color: 'var(--text-primary)', fontFamily: 'Kalam, cursive' }}>
                 Paquete Consolidado .ZIP
               </strong>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+              <span style={{ fontSize: '1rem', color: 'var(--text-secondary)', fontFamily: 'Patrick Hand, cursive' }}>
                 Descarga en un solo archivo todos los documentos PDF optimizados para subir o enviar juntos.
               </span>
             </div>
@@ -424,9 +418,9 @@ export default function PdfCompressorView({ onShowModal }) {
           <button 
             onClick={handleDownloadZip}
             className="btn btn-primary"
-            style={{ padding: '14px 28px', fontSize: '1rem' }}
+            style={{ padding: '14px 28px', fontSize: '1.25rem', fontFamily: 'Kalam, cursive', fontWeight: 700, background: 'var(--accent-red)', color: '#ffffff', boxShadow: '4px 4px 0px 0px #2d2d2d' }}
           >
-            <Archive size={18} />
+            <Archive size={20} />
             Descargar Archivo .ZIP ({files.length} {files.length === 1 ? 'doc' : 'docs'})
           </button>
         </div>

@@ -51,9 +51,8 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [pageIndex, totalCount, onNavigate, onClose]);
 
-  // Debounced API call to apply real-time adjustments
+  // Background / debounced API call (600ms) to sync high-res disk image after slider settles
   useEffect(() => {
-    // Skip if values match current page state
     if (
       rotation === (page.rotation || 0) &&
       brightness === (page.brightness || 0.0) &&
@@ -80,7 +79,6 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
         if (response.ok) {
           const data = await response.json();
           setPreviewUrl(data.preview_url);
-          // Also update parent state so grid card reflects latest
           onUpdatePage(page.id, {
             preview_url: data.preview_url,
             rotation: data.rotation,
@@ -91,11 +89,11 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
           });
         }
       } catch (err) {
-        console.error("Error applying live adjustment:", err);
+        console.error("Error applying adjustment to disk:", err);
       } finally {
         setIsApplying(false);
       }
-    }, 300); // 300ms debounce for smooth slider feel
+    }, 600); // 600ms debounce ensures zero network interruption while actively sliding
 
     return () => clearTimeout(timer);
   }, [rotation, brightness, contrast, bwFilter, page.id]);
@@ -111,12 +109,17 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
     setBwFilter(false);
   };
 
+  // Instantaneous GPU CSS Filters & Transforms (0ms Latency / 60 FPS)
+  // While sliding, the user gets immediate visual feedback right in the browser viewport
+  const cssFilter = `brightness(${100 + brightness}%) contrast(${100 + contrast}%) ${bwFilter ? 'grayscale(100%) contrast(220%)' : ''}`;
+  const cssTransform = `scale(${zoom}) rotate(${rotation}deg)`;
+
   return (
     <div style={{
       position: 'fixed',
       inset: 0,
-      background: 'rgba(0, 0, 0, 0.88)',
-      backdropFilter: 'blur(16px)',
+      background: 'rgba(45, 45, 45, 0.92)',
+      backdropFilter: 'blur(8px)',
       zIndex: 1000,
       display: 'flex',
       overflow: 'hidden'
@@ -128,31 +131,29 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '16px 24px',
-          background: 'rgba(11, 13, 17, 0.8)',
-          borderBottom: '1px solid var(--border-subtle)'
+          padding: '16px 28px',
+          background: 'var(--bg-paper)',
+          borderBottom: '3px solid var(--border-lead)',
+          boxShadow: '0 4px 0px 0px rgba(0,0,0,0.2)'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             {/* Navigation Arrows Group */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--bg-surface)', padding: '4px', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-surface)', padding: '6px', borderRadius: 'var(--wobbly-sm)', border: '2px solid var(--border-lead)', boxShadow: '2px 2px 0px 0px #2d2d2d' }}>
               <button
                 onClick={() => onNavigate && pageIndex > 0 && onNavigate(pageIndex - 1)}
                 disabled={pageIndex <= 0}
                 className="btn btn-secondary"
-                style={{ padding: '6px 10px', fontSize: '0.8rem', opacity: pageIndex <= 0 ? 0.4 : 1 }}
+                style={{ padding: '6px 12px', fontSize: '0.95rem' }}
                 title="Hoja Anterior (Flecha Izquierda)"
               >
-                <ChevronLeft size={16} /> Anterior
+                <ChevronLeft size={18} /> Anterior
               </button>
               
-              <span style={{
-                fontFamily: 'Outfit, sans-serif',
-                fontWeight: 700,
-                fontSize: '0.95rem',
-                background: 'var(--accent-cyan)',
-                color: '#0b0d11',
-                padding: '4px 12px',
-                borderRadius: '6px'
+              <span className="stamp-badge" style={{
+                background: 'var(--accent-red)',
+                color: '#ffffff',
+                padding: '4px 14px',
+                fontSize: '1rem'
               }}>
                 Hoja #{pageIndex + 1} de {totalCount}
               </span>
@@ -161,52 +162,52 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
                 onClick={() => onNavigate && pageIndex < totalCount - 1 && onNavigate(pageIndex + 1)}
                 disabled={pageIndex >= totalCount - 1}
                 className="btn btn-secondary"
-                style={{ padding: '6px 10px', fontSize: '0.8rem', opacity: pageIndex >= totalCount - 1 ? 0.4 : 1 }}
+                style={{ padding: '6px 12px', fontSize: '0.95rem' }}
                 title="Hoja Siguiente (Flecha Derecha)"
               >
-                Siguiente <ChevronRight size={16} />
+                Siguiente <ChevronRight size={18} />
               </button>
             </div>
 
-            <h3 style={{ fontSize: '1.1rem', margin: 0 }}>Estudio de Previsualización</h3>
+            <h3 style={{ fontSize: '1.4rem', margin: 0, fontFamily: 'Kalam, cursive' }}>Estudio de Previsualización y Edición</h3>
             {isApplying && (
-              <span style={{ fontSize: '0.8rem', color: 'var(--accent-cyan)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <RefreshCcw size={14} className="animate-spin" /> Procesando nitidez...
+              <span style={{ fontSize: '0.95rem', color: 'var(--accent-blue)', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontFamily: 'Patrick Hand, cursive' }}>
+                <RefreshCcw size={16} className="animate-spin" /> Sincronizando en caché...
               </span>
             )}
           </div>
 
           {/* Zoom Toolbar */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <button 
               onClick={() => setZoom(z => Math.max(0.5, z - 0.25))} 
               className="btn btn-secondary" 
-              style={{ padding: '6px 10px' }}
+              style={{ padding: '8px 12px' }}
               title="Alejar zoom"
             >
-              <ZoomOut size={16} />
+              <ZoomOut size={18} />
             </button>
-            <span style={{ fontSize: '0.85rem', width: '50px', textAlign: 'center' }}>{Math.round(zoom * 100)}%</span>
+            <span style={{ fontSize: '1.1rem', width: '60px', textAlign: 'center', fontWeight: 700, fontFamily: 'Kalam, cursive' }}>{Math.round(zoom * 100)}%</span>
             <button 
               onClick={() => setZoom(z => Math.min(3.0, z + 0.25))} 
               className="btn btn-secondary" 
-              style={{ padding: '6px 10px' }}
+              style={{ padding: '8px 12px' }}
               title="Acercar zoom"
             >
-              <ZoomIn size={16} />
+              <ZoomIn size={18} />
             </button>
             <button 
               onClick={() => setZoom(1.0)} 
               className="btn btn-secondary" 
-              style={{ padding: '6px 10px', fontSize: '0.8rem' }}
+              style={{ padding: '8px 14px', fontSize: '0.95rem' }}
               title="Ajustar a pantalla"
             >
-              <Maximize2 size={16} /> Fit
+              <Maximize2 size={18} /> Fit
             </button>
           </div>
         </div>
 
-        {/* Canvas Image Area */}
+        {/* Canvas Image Area - Drafting Table */}
         <div style={{
           flex: 1,
           overflow: 'auto',
@@ -214,7 +215,7 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
           alignItems: 'center',
           justifyContent: 'center',
           padding: '40px',
-          background: 'radial-gradient(circle at center, #181d2a 0%, #0e1118 100%)',
+          background: 'radial-gradient(circle at center, #3d3d3d 0%, #1e1e1e 100%)',
           position: 'relative'
         }}>
           {/* Floating Left Arrow */}
@@ -224,38 +225,41 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
               className="btn btn-secondary"
               style={{
                 position: 'absolute',
-                left: '24px',
+                left: '28px',
                 top: '50%',
                 transform: 'translateY(-50%)',
-                width: '48px',
-                height: '48px',
+                width: '54px',
+                height: '54px',
                 borderRadius: '50%',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: '0 10px 25px rgba(0,0,0,0.6)',
+                boxShadow: '4px 4px 0px 0px #111111',
                 zIndex: 10,
-                background: 'rgba(22, 27, 38, 0.85)',
-                backdropFilter: 'blur(8px)'
+                background: 'var(--bg-surface)'
               }}
               title="Anterior (Flecha Izquierda)"
             >
-              <ChevronLeft size={24} />
+              <ChevronLeft size={28} />
             </button>
           )}
 
-          <img 
-            src={`${API_BASE}${previewUrl}`} 
-            alt="Hoja en previsualización" 
-            style={{
-              maxHeight: '85vh',
-              transform: `scale(${zoom})`,
-              transformOrigin: 'center center',
-              transition: 'transform 0.2s ease',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
-              border: '1px solid var(--border-subtle)'
-            }}
-          />
+          {/* Polaroid Container around Image */}
+          <div className="paper-card" style={{ padding: '16px', background: '#ffffff', border: '3px solid var(--border-lead)', boxShadow: '10px 10px 0px 0px #111111' }}>
+            <img 
+              src={`${API_BASE}${previewUrl}`} 
+              alt="Hoja en previsualización" 
+              style={{
+                maxHeight: '78vh',
+                maxWidth: '75vw',
+                filter: cssFilter,
+                transform: cssTransform,
+                transformOrigin: 'center center',
+                transition: isApplying ? 'none' : 'transform 0.15s ease, filter 0.05s ease',
+                display: 'block'
+              }}
+            />
+          </div>
 
           {/* Floating Right Arrow */}
           {pageIndex < totalCount - 1 && (
@@ -264,84 +268,82 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
               className="btn btn-secondary"
               style={{
                 position: 'absolute',
-                right: '24px',
+                right: '28px',
                 top: '50%',
                 transform: 'translateY(-50%)',
-                width: '48px',
-                height: '48px',
+                width: '54px',
+                height: '54px',
                 borderRadius: '50%',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: '0 10px 25px rgba(0,0,0,0.6)',
+                boxShadow: '4px 4px 0px 0px #111111',
                 zIndex: 10,
-                background: 'rgba(22, 27, 38, 0.85)',
-                backdropFilter: 'blur(8px)'
+                background: 'var(--bg-surface)'
               }}
               title="Siguiente (Flecha Derecha)"
             >
-              <ChevronRight size={24} />
+              <ChevronRight size={28} />
             </button>
           )}
         </div>
       </div>
 
-      {/* Right Inspector Panel */}
-      <aside className="glass-panel" style={{
-        width: '360px',
-        borderLeft: '1px solid var(--border-subtle)',
+      {/* Right Inspector Panel - Sketchbook Notes */}
+      <aside className="paper-card-thick" style={{
+        width: '380px',
+        borderLeft: '3px solid var(--border-lead)',
         borderTop: 'none',
         borderBottom: 'none',
         borderRight: 'none',
         borderRadius: 0,
-        padding: '24px',
+        padding: '28px 24px',
         display: 'flex',
         flexDirection: 'column',
-        gap: '24px'
+        gap: '24px',
+        background: 'var(--bg-paper)'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <h4 style={{ fontSize: '1.1rem' }}>Parámetros Ópticos</h4>
-          <button onClick={onClose} className="btn btn-secondary" style={{ padding: '6px' }} title="Cerrar">
-            <X size={18} />
+          <h4 style={{ fontSize: '1.4rem', fontFamily: 'Kalam, cursive' }}>Parámetros Ópticos</h4>
+          <button onClick={onClose} className="btn btn-secondary" style={{ padding: '8px' }} title="Cerrar">
+            <X size={20} />
           </button>
         </div>
 
         {/* Page Metadata Box */}
-        <div style={{
-          background: 'var(--bg-surface)',
-          padding: '12px',
-          borderRadius: 'var(--radius-sm)',
-          border: '1px solid var(--border-subtle)',
-          fontSize: '0.85rem',
-          color: 'var(--text-secondary)'
+        <div className="postit-card" style={{
+          padding: '14px',
+          fontSize: '1rem',
+          color: 'var(--text-primary)',
+          transform: 'rotate(1deg)'
         }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
             <span>Resolución de captura:</span>
-            <strong style={{ color: 'var(--text-primary)' }}>{page.dpi} DPI</strong>
+            <strong style={{ fontFamily: 'Kalam, cursive' }}>{page.dpi} DPI</strong>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
             <span>Dimensiones físicas:</span>
-            <strong style={{ color: 'var(--text-primary)' }}>{page.width} × {page.height} px</strong>
+            <strong style={{ fontFamily: 'Kalam, cursive' }}>{page.width} × {page.height} px</strong>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span>Peso en caché:</span>
-            <strong style={{ color: 'var(--accent-cyan)' }}>{page.size_kb} KB</strong>
+            <strong style={{ color: 'var(--accent-blue)', fontFamily: 'Kalam, cursive' }}>{page.size_kb} KB</strong>
           </div>
         </div>
 
         {/* 1. Rotation Controls */}
         <div>
-          <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <RotateCw size={16} /> Rotación de Hoja ({rotation}°)
+          <label style={{ display: 'block', fontSize: '1.05rem', color: 'var(--text-primary)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600 }}>
+            <RotateCw size={18} color="var(--accent-red)" /> Rotación de Hoja ({rotation}°)
           </label>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
-            <button onClick={() => handleRotate(90)} className="btn btn-secondary" style={{ fontSize: '0.85rem', padding: '8px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+            <button onClick={() => handleRotate(90)} className="btn btn-secondary" style={{ fontSize: '0.95rem', padding: '8px' }}>
               +90° CW
             </button>
-            <button onClick={() => handleRotate(180)} className="btn btn-secondary" style={{ fontSize: '0.85rem', padding: '8px' }}>
+            <button onClick={() => handleRotate(180)} className="btn btn-secondary" style={{ fontSize: '0.95rem', padding: '8px' }}>
               +180°
             </button>
-            <button onClick={() => handleRotate(270)} className="btn btn-secondary" style={{ fontSize: '0.85rem', padding: '8px' }}>
+            <button onClick={() => handleRotate(270)} className="btn btn-secondary" style={{ fontSize: '0.95rem', padding: '8px' }}>
               +270°
             </button>
           </div>
@@ -349,9 +351,9 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
 
         {/* 2. Brightness Slider */}
         <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '6px' }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Sun size={16} /> Brillo</span>
-            <strong style={{ color: brightness !== 0 ? 'var(--accent-cyan)' : 'inherit' }}>{brightness > 0 ? `+${brightness}` : brightness}</strong>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.05rem', color: 'var(--text-primary)', marginBottom: '6px', fontWeight: 600 }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Sun size={18} color="var(--accent-blue)" /> Brillo (GPU Instantáneo)</span>
+            <strong style={{ color: brightness !== 0 ? 'var(--accent-red)' : 'inherit', fontFamily: 'Kalam, cursive', fontSize: '1.15rem' }}>{brightness > 0 ? `+${brightness}` : brightness}</strong>
           </div>
           <input 
             type="range" 
@@ -365,9 +367,9 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
 
         {/* 3. Contrast Slider */}
         <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '6px' }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Contrast size={16} /> Contraste</span>
-            <strong style={{ color: contrast !== 0 ? 'var(--accent-cyan)' : 'inherit' }}>{contrast > 0 ? `+${contrast}` : contrast}</strong>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.05rem', color: 'var(--text-primary)', marginBottom: '6px', fontWeight: 600 }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Contrast size={18} color="var(--accent-blue)" /> Contraste (GPU Instantáneo)</span>
+            <strong style={{ color: contrast !== 0 ? 'var(--accent-red)' : 'inherit', fontFamily: 'Kalam, cursive', fontSize: '1.15rem' }}>{contrast > 0 ? `+${contrast}` : contrast}</strong>
           </div>
           <input 
             type="range" 
@@ -380,37 +382,31 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
         </div>
 
         {/* 4. B&W Threshold Toggle */}
-        <div style={{
+        <div className="paper-card" style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '12px',
-          background: bwFilter ? 'rgba(0, 240, 255, 0.08)' : 'var(--bg-surface)',
-          border: bwFilter ? '1px solid var(--accent-cyan)' : '1px solid var(--border-subtle)',
-          borderRadius: 'var(--radius-sm)',
-          cursor: 'pointer',
-          transition: 'all 0.2s ease'
+          padding: '14px',
+          background: bwFilter ? 'var(--bg-postit)' : 'var(--bg-surface)',
+          cursor: 'pointer'
         }} onClick={() => setBwFilter(!bwFilter)}>
           <div>
-            <span style={{ fontSize: '0.9rem', fontWeight: 600, display: 'block' }}>Filtro Blanco/Negro</span>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Umbral alto para texto y firmas</span>
+            <span style={{ fontSize: '1.1rem', fontWeight: 700, display: 'block', fontFamily: 'Kalam, cursive' }}>Filtro Blanco/Negro</span>
+            <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Umbral de alto contraste instantáneo</span>
           </div>
-          <input 
-            type="checkbox" 
-            checked={bwFilter} 
-            onChange={(e) => setBwFilter(e.target.checked)} 
-            style={{ width: '18px', height: '18px', pointerEvents: 'none' }}
-          />
+          <div className={`wobbly-checkbox ${bwFilter ? 'checked' : ''}`}>
+            {bwFilter && <Check size={18} strokeWidth={3.5} color="#ffffff" />}
+          </div>
         </div>
 
         {/* Bottom Action Bar */}
-        <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <button onClick={onClose} className="btn btn-primary" style={{ width: '100%', padding: '12px' }}>
-            <Check size={18} />
+        <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <button onClick={onClose} className="btn btn-primary" style={{ width: '100%', padding: '14px', background: 'var(--accent-red)', color: '#ffffff', fontFamily: 'Kalam, cursive', fontSize: '1.25rem', fontWeight: 700, boxShadow: '4px 4px 0px 0px #2d2d2d' }}>
+            <Check size={22} />
             Confirmar y Guardar Hoja
           </button>
-          <button onClick={handleReset} className="btn btn-secondary" style={{ width: '100%', padding: '10px', fontSize: '0.85rem' }}>
-            <RefreshCcw size={14} />
+          <button onClick={handleReset} className="btn btn-secondary" style={{ width: '100%', padding: '10px', fontSize: '1rem' }}>
+            <RefreshCcw size={16} />
             Restablecer Valores
           </button>
         </div>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Printer, RefreshCw, Settings, Sliders, Zap } from 'lucide-react';
+import { Printer, RefreshCw, Sliders, Zap } from 'lucide-react';
 
 export default function ScannerControls({
   scanners,
@@ -19,29 +19,42 @@ export default function ScannerControls({
   const isVirtual = currentScanner?.type === 'virtual' || selectedDevice === 'virtual-scanner-sim';
 
   return (
-    <aside className="glass-panel" style={{ width: '320px', padding: '24px', display: 'flex', flexDirection: 'column', gap: '24px', flexShrink: 0 }}>
+    <aside className="paper-card-thick" style={{ 
+      width: '340px', 
+      padding: '28px 24px 24px 24px', 
+      display: 'flex', 
+      flexDirection: 'column', 
+      gap: '22px', 
+      flexShrink: 0,
+      margin: '20px 0 20px 24px',
+      height: 'calc(100vh - 104px)',
+      overflowY: 'auto'
+    }}>
+      {/* Tack Decoration at Top Center */}
+      <div className="tack-decoration" />
+
       {/* Header & Device Selection */}
       <div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-          <h2 style={{ fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Printer size={20} color="var(--accent-cyan)" />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+          <h2 style={{ fontSize: '1.45rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Printer size={22} color="var(--accent-red)" />
             Escáner WIA
           </h2>
           <button 
             onClick={onRefreshScanners} 
             className="btn btn-secondary" 
-            style={{ padding: '6px 10px', fontSize: '0.8rem' }}
+            style={{ padding: '6px 12px', fontSize: '0.9rem' }}
             title="Refrescar lista de escáneres USB"
           >
-            <RefreshCw size={14} />
+            <RefreshCw size={16} />
           </button>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <select 
             value={selectedDevice} 
             onChange={(e) => setSelectedDevice(e.target.value)}
-            style={{ width: '100%', fontWeight: 500 }}
+            style={{ width: '100%', fontWeight: 600 }}
           >
             {scanners.map((s) => (
               <option key={s.id} value={s.id}>
@@ -50,30 +63,31 @@ export default function ScannerControls({
             ))}
           </select>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: isVirtual ? 'var(--accent-amber)' : '#22c55e', marginTop: '4px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.95rem', color: isVirtual ? '#d97706' : 'var(--accent-green)', marginTop: '4px', fontWeight: 600 }}>
             <span style={{ 
-              width: '8px', 
-              height: '8px', 
+              width: '12px', 
+              height: '12px', 
               borderRadius: '50%', 
-              backgroundColor: isVirtual ? 'var(--accent-amber)' : '#22c55e',
+              backgroundColor: isVirtual ? '#fbbf24' : 'var(--accent-green)',
+              border: '2px solid var(--border-lead)',
               display: 'inline-block'
-            }} className="animate-pulse-glow" />
-            {isVirtual ? 'Modo Simulación Inteligente' : 'Escáner USB Conectado y Listo'}
+            }} className="animate-pulse-bounce" />
+            {isVirtual ? 'Simulador Óptico Activo' : 'Escáner USB Conectado y Listo'}
           </div>
         </div>
       </div>
 
-      <hr style={{ border: 'none', borderTop: '1px solid var(--border-subtle)' }} />
+      <hr style={{ border: 'none', borderTop: '2px dashed var(--border-lead)', margin: '4px 0' }} />
 
       {/* Optical Settings */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        <h3 style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Sliders size={16} /> Parámetros de Captura
+        <h3 style={{ fontSize: '1.25rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Sliders size={18} color="var(--accent-blue)" /> Parámetros de Captura
         </h3>
 
         {/* DPI Resolution */}
         <div>
-          <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '6px', color: 'var(--text-secondary)' }}>
+          <label style={{ display: 'block', fontSize: '1rem', marginBottom: '6px', color: 'var(--text-secondary)', fontWeight: 600 }}>
             Resolución Óptica (DPI)
           </label>
           <select 
@@ -89,7 +103,7 @@ export default function ScannerControls({
 
         {/* Color Mode */}
         <div>
-          <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '6px', color: 'var(--text-secondary)' }}>
+          <label style={{ display: 'block', fontSize: '1rem', marginBottom: '6px', color: 'var(--text-secondary)', fontWeight: 600 }}>
             Modo de Color
           </label>
           <select 
@@ -105,7 +119,7 @@ export default function ScannerControls({
 
         {/* Paper Size */}
         <div>
-          <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '6px', color: 'var(--text-secondary)' }}>
+          <label style={{ display: 'block', fontSize: '1rem', marginBottom: '6px', color: 'var(--text-secondary)', fontWeight: 600 }}>
             Tamaño de Papel
           </label>
           <select 
@@ -120,30 +134,41 @@ export default function ScannerControls({
         </div>
       </div>
 
-      <hr style={{ border: 'none', borderTop: '1px solid var(--border-subtle)' }} />
+      <hr style={{ border: 'none', borderTop: '2px dashed var(--border-lead)', margin: '4px 0' }} />
 
       {/* Main Action Button */}
       <div style={{ marginTop: 'auto' }}>
         <button 
           onClick={onScan} 
           disabled={isScanning}
-          className="btn btn-primary" 
-          style={{ width: '100%', padding: '14px', fontSize: '1.05rem', boxShadow: 'var(--shadow-cyan)' }}
+          className="btn btn-amber" 
+          style={{ 
+            width: '100%', 
+            padding: '16px', 
+            fontSize: '1.35rem', 
+            fontFamily: 'Kalam, cursive', 
+            fontWeight: 700,
+            transform: 'rotate(-1deg)',
+            boxShadow: '4px 4px 0px 0px #2d2d2d',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '10px'
+          }}
         >
           {isScanning ? (
             <>
-              <RefreshCw className="animate-spin" size={20} />
+              <RefreshCw className="animate-spin" size={24} />
               Capturando Hoja...
             </>
           ) : (
             <>
-              <Zap size={20} />
-              + Escanear Nueva Hoja
+              Escanear nueva hoja
             </>
           )}
         </button>
-        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center', marginTop: '10px' }}>
-          La captura preserva nitidez 100% sin pérdida de compresión.
+        <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', textAlign: 'center', marginTop: '10px', fontFamily: 'Patrick Hand, cursive' }}>
+          Pulsa para digitalizar una página directa a tu cuaderno.
         </p>
       </div>
     </aside>

@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
-from icanscan import scanner_wia, image_processor, pdf_compressor
+from icanscan import scanner_wia, image_processor, pdf_compressor, pdf_tools
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("icanscan")
@@ -52,6 +52,20 @@ class DeleteRequest(BaseModel):
 class ExportRequest(BaseModel):
     page_ids: List[str]
     quality_mode: str = "lossless"
+
+class ExtractImagesRequest(BaseModel):
+    pdf_path: str
+    page_range: str = "todas"
+    format_type: str = "PNG"
+    dpi: int = 300
+
+class ImagesToPdfRequest(BaseModel):
+    image_paths: List[str]
+    output_filename: str = "Documento_Unido.pdf"
+
+class SplitPdfRequest(BaseModel):
+    pdf_path: str
+    range_spec: str = "1"
 
 @app.get("/api/scanners")
 def get_scanners():
@@ -276,6 +290,53 @@ def download_compressed_zip(request: CompressZipRequest):
         logger.error(f"Error creating ZIP: {e}")
         raise HTTPException(status_code=500, detail=f"Error al generar ZIP: {str(e)}")
 
+@app.post("/api/tools/extract-images")
+def extract_images_from_pdf(request: ExtractImagesRequest):
+    try:
+        items, zip_path, task_id = pdf_tools.extract_pdf_pages_to_images(
+            pdf_path=request.pdf_path,
+            range_spec=request.page_range,
+            format_type=request.format_type,
+            dpi=request.dpi
+        )
+        zip_url = f"/cache/tools/{task_id}/{os.path.basename(zip_path)}"
+        return {"success": True, "items": items, "zip_url": zip_url, "task_id": task_id}
+    except Exception as e:
+        logger.error(f"Error extracting images: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/tools/images-to-pdf")
+def convert_images_to_pdf(request: ImagesToPdfRequest):
+    try:
+        output_path, url, size_mb = pdf_tools.images_to_pdf(
+            image_paths=request.image_paths,
+            output_filename=request.output_filename
+        )
+        return {"success": True, "url": url, "size_mb": size_mb, "filename": os.path.basename(output_path)}
+    except Exception as e:
+        logger.error(f"Error converting images to PDF: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/tools/split-pdf")
+def split_pdf_multi_ranges(request: SplitPdfRequest):
+    try:
+        items, zip_path, task_id = pdf_tools.split_or_extract_pdf_ranges(
+            pdf_path=request.pdf_path,
+            range_spec=request.range_spec
+        )
+        zip_url = f"/cache/tools/{task_id}/{os.path.basename(zip_path)}"
+        return {"success": True, "items": items, "zip_url": zip_url, "task_id": task_id}
+    except Exception as e:
+        logger.error(f"Error splitting PDF: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/tools/download/{task_id}/{filename}")
+def download_tool_file(task_id: str, filename: str):
+    file_path = os.path.join(pdf_tools._get_tools_cache_dir(), task_id, filename)
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Archivo no encontrado en servidor")
+    return FileResponse(path=file_path, filename=filename)
+
 # Mount built React frontend static distribution if built
 FRONTEND_DIST = os.path.join(os.path.abspath(os.path.dirname(__file__)), "..", "..", "frontend", "dist")
 if os.path.exists(FRONTEND_DIST):
@@ -323,6 +384,26 @@ class DesktopApi:
                 return [str(result)]
         except Exception as e:
             logger.error(f"Error opening pywebview open dialog: {e}")
+        return []
+
+    def open_image_dialog(self) -> List[str]:
+        """Opens native Windows Open File dialog for multiple images (PNG/JPG)."""
+        if not self.window:
+            return []
+        try:
+            import webview
+            result = self.window.create_file_dialog(
+                webview.OPEN_DIALOG,
+                allow_multiple=True,
+                directory=os.path.expanduser("~"),
+                file_types=("Imágenes (*.png;*.jpg;*.jpeg)", "Todos los archivos (*.*)")
+            )
+            if result and len(result) > 0:
+                if isinstance(result, (list, tuple)):
+                    return [str(p) for p in result]
+                return [str(result)]
+        except Exception as e:
+            logger.error(f"Error opening pywebview image dialog: {e}")
         return []
 
 desktop_api = DesktopApi()

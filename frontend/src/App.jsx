@@ -6,7 +6,8 @@ import PreviewStudioModal from './components/PreviewStudioModal';
 import ExportBar from './components/ExportBar';
 import CustomModal from './components/CustomModal';
 import PdfCompressorView from './components/PdfCompressorView';
-import { Layers, Archive } from 'lucide-react';
+import PdfToolsView from './components/PdfToolsView';
+import { Layers, Archive, Wrench } from 'lucide-react';
 
 const API_BASE = "http://localhost:8000";
 
@@ -283,59 +284,73 @@ export default function App() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
-      {/* Top Application Header / Navigation Bar */}
+      {/* Top Application Header / Sketchbook Navigation Bar */}
       <header style={{
         display: 'flex',
-        alignItems: 'center',
+        alignItems: 'flex-end',
         justifyContent: 'space-between',
-        padding: '0 24px',
-        height: '64px',
-        background: 'rgba(11, 13, 17, 0.95)',
-        borderBottom: '1px solid var(--border-subtle)',
-        flexShrink: 0
+        padding: '12px 28px 0 28px',
+        background: 'var(--bg-surface)',
+        borderBottom: '3px solid var(--border-lead)',
+        boxShadow: '0 4px 0px 0px rgba(45, 45, 45, 0.12)',
+        flexShrink: 0,
+        position: 'relative',
+        zIndex: 20
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <div style={{
-            width: '36px',
-            height: '36px',
-            borderRadius: '10px',
-            background: 'linear-gradient(135deg, #00f0ff 0%, #0099ff 100%)',
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', paddingBottom: '12px' }}>
+          <div className="animate-pulse-bounce" style={{
+            width: '44px',
+            height: '44px',
+            borderRadius: 'var(--wobbly-sm)',
+            background: 'var(--bg-postit)',
+            border: '3px solid var(--border-lead)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 0 15px rgba(0, 240, 255, 0.4)'
+            boxShadow: '3px 3px 0px 0px #2d2d2d',
+            transform: 'rotate(-3deg)'
           }}>
-            <span style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 800, fontSize: '1.2rem', color: '#0b0d11' }}>iS</span>
+            <span style={{ fontFamily: 'Kalam, cursive', fontWeight: 700, fontSize: '1.4rem', color: 'var(--text-primary)' }}>iS</span>
           </div>
           <div>
-            <h1 style={{ fontFamily: 'Outfit, sans-serif', fontSize: '1.25rem', fontWeight: 700, margin: 0, letterSpacing: '0.02em', color: 'var(--text-primary)' }}>
-              iCanScan <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--accent-cyan)', background: 'rgba(0, 240, 255, 0.12)', padding: '2px 8px', borderRadius: '4px', marginLeft: '6px' }}>STUDIO</span>
+            <h1 style={{ fontFamily: 'Kalam, cursive', fontSize: '1.7rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              iCanScan
+              <span className="stamp-badge" style={{ fontSize: '0.75rem', background: 'var(--accent-red)', color: '#ffffff', border: '2px solid var(--border-lead)', transform: 'rotate(3deg)' }}>
+                STUDIO
+              </span>
             </h1>
           </div>
         </div>
 
-        {/* Tab Navigation */}
-        <nav style={{ display: 'flex', height: '100%' }}>
+        {/* Folder / Sketchbook Tab Navigation */}
+        <nav style={{ display: 'flex' }}>
           <button 
             onClick={() => setActiveTab('studio')}
             className={`tab-btn ${activeTab === 'studio' ? 'active' : ''}`}
           >
             <Layers size={18} />
-            Estudio de Escaneo y Ordenamiento
+            Mesa de Trabajo y Escaneo
           </button>
           <button 
             onClick={() => setActiveTab('compressor')}
             className={`tab-btn ${activeTab === 'compressor' ? 'active' : ''}`}
           >
             <Archive size={18} />
-            Compresión de Peso Drive (25 MB)
+            Compresión Drive (25 MB)
+          </button>
+          <button 
+            onClick={() => setActiveTab('tools')}
+            className={`tab-btn ${activeTab === 'tools' ? 'active' : ''}`}
+          >
+            <Wrench size={18} />
+            Herramientas y Extracción PDF
           </button>
         </nav>
       </header>
 
       {/* Main Content Area based on activeTab */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden', position: 'relative' }}>
-        {activeTab === 'studio' ? (
+        {activeTab === 'studio' && (
           <>
             {/* Left Sidebar - Scanner Parameters */}
             <ScannerControls 
@@ -393,9 +408,9 @@ export default function App() {
               onClearSession={handleClearSession}
             />
           </>
-        ) : (
-          <PdfCompressorView onShowModal={showModal} />
         )}
+        {activeTab === 'compressor' && <PdfCompressorView onShowModal={showModal} />}
+        {activeTab === 'tools' && <PdfToolsView onShowModal={showModal} />}
       </div>
 
       {/* Global Custom Notification / Confirmation Modal */}

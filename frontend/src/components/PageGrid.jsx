@@ -27,7 +27,7 @@ export default function PageGrid({
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 5, // Require 5px movement before starting drag to allow clicking checkboxes easily
+        distance: 5,
       },
     })
   );
@@ -41,27 +41,36 @@ export default function PageGrid({
         alignItems: 'center', 
         justifyContent: 'center', 
         padding: '40px',
-        textAlign: 'center',
-        background: 'radial-gradient(circle at center, rgba(0, 240, 255, 0.04) 0%, transparent 70%)'
+        textAlign: 'center'
       }}>
-        <div style={{ 
-          width: '80px', 
-          height: '80px', 
-          borderRadius: '50%', 
-          background: 'var(--bg-surface-elevated)', 
-          border: '1px solid var(--border-subtle)',
+        <div className="postit-card" style={{ 
+          maxWidth: '480px',
+          padding: '40px 32px',
           display: 'flex',
+          flexDirection: 'column',
           alignItems: 'center',
-          justifyContent: 'center',
-          marginBottom: '20px',
-          boxShadow: 'var(--shadow-md)'
+          transform: 'rotate(-1deg)'
         }}>
-          <FileText size={40} color="var(--accent-cyan)" />
+          <div className="tape-decoration" />
+          <div style={{ 
+            width: '80px', 
+            height: '80px', 
+            borderRadius: '50%', 
+            background: 'var(--bg-surface)', 
+            border: '3px solid var(--border-lead)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: '20px',
+            boxShadow: '3px 3px 0px 0px #2d2d2d'
+          }}>
+            <FileText size={40} color="var(--accent-red)" />
+          </div>
+          <h2 style={{ fontSize: '1.8rem', marginBottom: '12px', fontFamily: 'Kalam, cursive' }}>¡Lienzo de Escaneo Vacío!</h2>
+          <p style={{ color: 'var(--text-primary)', fontSize: '1.15rem', lineHeight: 1.6, fontFamily: 'Patrick Hand, cursive' }}>
+            Conecta tu escáner WIA y haz clic en el botón <strong>+ Escanear Nueva Hoja</strong> de la izquierda para pegar aquí tus documentos digitalizados.
+          </p>
         </div>
-        <h2 style={{ fontSize: '1.5rem', marginBottom: '8px' }}>Lienzo de Escaneo Vacío</h2>
-        <p style={{ color: 'var(--text-secondary)', maxWidth: '420px', fontSize: '0.95rem' }}>
-          Conecta tu escáner WIA y haz clic en el botón <strong>+ Escanear Nueva Hoja</strong> de la izquierda para comenzar a digitalizar tus documentos en máxima fidelidad.
-        </p>
       </main>
     );
   }
@@ -69,30 +78,26 @@ export default function PageGrid({
   const allSelected = pages.length > 0 && selectedIds.length === pages.length;
 
   return (
-    <main style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '24px', overflowY: 'auto' }}>
+    <main style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '20px 28px 24px 8px', overflowY: 'auto' }}>
       {/* Top Bulk Action Bar */}
-      <div style={{ 
+      <div className="paper-card" style={{ 
         display: 'flex', 
         alignItems: 'center', 
         justifyContent: 'space-between', 
-        padding: '12px 20px', 
-        background: 'var(--bg-surface)', 
-        border: '1px solid var(--border-subtle)', 
-        borderRadius: 'var(--radius-md)', 
-        marginBottom: '20px',
-        boxShadow: 'var(--shadow-sm)'
+        padding: '14px 20px', 
+        marginBottom: '24px'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <button 
             onClick={allSelected ? onDeselectAll : onSelectAll}
             className="btn btn-secondary" 
-            style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+            style={{ padding: '8px 14px', fontSize: '1rem' }}
           >
-            {allSelected ? <CheckSquare size={16} color="var(--accent-cyan)" /> : <Square size={16} />}
+            {allSelected ? <CheckSquare size={18} color="var(--accent-red)" /> : <Square size={18} />}
             {allSelected ? 'Deseleccionar Todo' : 'Seleccionar Todo'}
           </button>
-          <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-            <strong>{pages.length}</strong> {pages.length === 1 ? 'hoja escaneada' : 'hojas escaneadas'} 
+          <span style={{ fontSize: '1.1rem', color: 'var(--text-primary)', fontFamily: 'Patrick Hand, cursive' }}>
+            <strong style={{ fontFamily: 'Kalam, cursive', fontSize: '1.25rem' }}>{pages.length}</strong> {pages.length === 1 ? 'hoja en el cuaderno' : 'hojas en el cuaderno'} 
             {selectedIds.length > 0 && ` (${selectedIds.length} seleccionadas)`}
           </span>
         </div>
@@ -101,9 +106,9 @@ export default function PageGrid({
           <button 
             onClick={onDeleteSelected}
             className="btn btn-danger" 
-            style={{ padding: '8px 14px', fontSize: '0.85rem' }}
+            style={{ padding: '8px 16px', fontSize: '1rem' }}
           >
-            <Trash2 size={16} />
+            <Trash2 size={18} />
             Borrar Seleccionadas ({selectedIds.length})
           </button>
         )}
@@ -119,8 +124,8 @@ export default function PageGrid({
           <div style={{ 
             display: 'grid', 
             gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', 
-            gap: '20px',
-            paddingBottom: '100px' // Space for bottom Export Bar
+            gap: '24px',
+            paddingBottom: '120px'
           }}>
             {pages.map((page, idx) => (
               <SortablePageCard 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Eye, GripVertical, Trash2 } from 'lucide-react';
+import { Eye, GripVertical, Trash2, Check } from 'lucide-react';
 
 export default function SortablePageCard({ page, index, isSelected, onToggleSelect, onDelete, onInspect }) {
   const {
@@ -16,7 +16,7 @@ export default function SortablePageCard({ page, index, isSelected, onToggleSele
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.4 : 1,
+    opacity: isDragging ? 0.5 : 1,
     position: 'relative',
     zIndex: isDragging ? 999 : 1
   };
@@ -26,25 +26,25 @@ export default function SortablePageCard({ page, index, isSelected, onToggleSele
   return (
     <div 
       ref={setNodeRef} 
-      style={style} 
-      className={`glass-card ${isSelected ? 'selected-card' : ''}`}
       style={{
         ...style,
         display: 'flex',
         flexDirection: 'column',
-        overflow: 'hidden',
-        border: isSelected ? '2px solid var(--accent-cyan)' : '1px solid var(--border-subtle)',
-        boxShadow: isSelected ? 'var(--shadow-cyan)' : 'var(--shadow-sm)'
-      }}
+        overflow: 'visible',
+        transform: `${style.transform ? style.transform : ''} rotate(${index % 2 === 0 ? '-1deg' : '1deg'})`
+      }} 
+      className={isSelected ? 'postit-card' : 'paper-card'}
     >
+      {/* Tape Decoration at Top Center */}
+      <div className="tape-decoration" />
+
       {/* Top Header Row: Drag Handle + Page Number Badge + Checkbox */}
       <div style={{ 
         display: 'flex', 
         alignItems: 'center', 
         justifyContent: 'space-between', 
-        padding: '8px 12px', 
-        background: 'rgba(0, 0, 0, 0.4)',
-        borderBottom: '1px solid var(--border-subtle)'
+        padding: '12px 14px 8px 14px', 
+        borderBottom: '2px dashed var(--border-lead)'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <button 
@@ -53,36 +53,33 @@ export default function SortablePageCard({ page, index, isSelected, onToggleSele
             style={{ 
               background: 'transparent', 
               border: 'none', 
-              color: 'var(--text-muted)', 
+              color: 'var(--text-primary)', 
               cursor: 'grab', 
               padding: '2px', 
               display: 'flex', 
               alignItems: 'center' 
             }}
-            title="Arrastrar para reordenar (Pick & Drop)"
+            title="Arrastrar para reordenar hoja"
           >
-            <GripVertical size={16} />
+            <GripVertical size={20} />
           </button>
-          <span style={{ 
-            fontFamily: 'Outfit, sans-serif', 
-            fontWeight: 700, 
-            fontSize: '0.85rem', 
-            background: 'var(--accent-cyan)', 
-            color: '#0b0d11', 
-            padding: '2px 8px', 
-            borderRadius: '4px' 
+          <span className="stamp-badge" style={{ 
+            background: isSelected ? 'var(--text-primary)' : 'var(--accent-red)', 
+            color: '#ffffff', 
+            padding: '2px 10px', 
+            fontSize: '0.9rem' 
           }}>
             #{index + 1}
           </span>
         </div>
 
-        <input 
-          type="checkbox" 
-          checked={isSelected} 
-          onChange={() => onToggleSelect(page.id)}
-          style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#00f0ff' }}
+        <div 
+          onClick={() => onToggleSelect(page.id)}
+          className={`wobbly-checkbox ${isSelected ? 'checked' : ''}`}
           title="Seleccionar hoja para exportar a PDF o eliminar"
-        />
+        >
+          {isSelected && <Check size={18} strokeWidth={3.5} color="#ffffff" />}
+        </div>
       </div>
 
       {/* Thumbnail Preview Area */}
@@ -90,41 +87,48 @@ export default function SortablePageCard({ page, index, isSelected, onToggleSele
         onClick={() => onInspect(page)}
         style={{ 
           height: '240px', 
-          background: '#1a1f2c', 
+          background: '#f4f1ea', 
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: 'center', 
           cursor: 'pointer',
           position: 'relative',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          borderBottom: '2px solid var(--border-lead)'
         }}
-        title="Haz clic para abrir el Estudio de Previsualización y Edición"
+        title="Haz clic para abrir el Estudio de Previsualización y Edición instantánea"
       >
         <img 
           src={`${API_BASE}${page.preview_url}`} 
           alt={`Hoja escaneada #${index + 1}`} 
           style={{ 
-            maxWidth: '92%', 
-            maxHeight: '92%', 
+            maxWidth: '90%', 
+            maxHeight: '90%', 
             objectFit: 'contain', 
-            boxShadow: '0 4px 12px rgba(0,0,0,0.6)',
-            transition: 'transform 0.2s ease'
+            boxShadow: '3px 3px 0px 0px rgba(0,0,0,0.3)',
+            border: '1px solid var(--border-lead)',
+            background: '#ffffff',
+            transition: 'transform 0.15s ease'
           }} 
         />
         <div style={{
           position: 'absolute',
           bottom: '8px',
           right: '8px',
-          background: 'rgba(0, 0, 0, 0.75)',
-          padding: '4px 8px',
-          borderRadius: '4px',
-          fontSize: '0.75rem',
-          color: 'var(--text-secondary)',
+          background: 'var(--bg-surface)',
+          border: '2px solid var(--border-lead)',
+          padding: '2px 8px',
+          borderRadius: 'var(--wobbly-sm)',
+          fontSize: '0.8rem',
+          fontFamily: 'Kalam, cursive',
+          fontWeight: 700,
+          color: 'var(--text-primary)',
+          boxShadow: '1px 1px 0px 0px #2d2d2d',
           display: 'flex',
           alignItems: 'center',
           gap: '4px'
         }}>
-          <Eye size={12} color="var(--accent-cyan)" />
+          <Eye size={14} color="var(--accent-blue)" />
           {page.dpi} DPI
         </div>
       </div>
@@ -134,23 +138,23 @@ export default function SortablePageCard({ page, index, isSelected, onToggleSele
         display: 'flex', 
         alignItems: 'center', 
         justifyContent: 'space-between', 
-        padding: '10px 12px', 
-        background: 'rgba(0, 0, 0, 0.25)',
-        fontSize: '0.8rem',
+        padding: '10px 14px', 
+        fontSize: '1rem',
+        fontFamily: 'Patrick Hand, cursive',
         color: 'var(--text-secondary)'
       }}>
         <div>
           <span>{page.width}×{page.height} px</span>
-          <span style={{ marginLeft: '6px', color: 'var(--text-muted)' }}>({page.size_kb} KB)</span>
+          <span style={{ marginLeft: '6px', fontWeight: 600, color: 'var(--accent-blue)' }}>({page.size_kb} KB)</span>
         </div>
 
         <button 
           onClick={(e) => { e.stopPropagation(); onDelete(page.id); }} 
-          className="btn btn-danger" 
-          style={{ padding: '6px 8px', fontSize: '0.75rem' }}
+          className="btn btn-secondary" 
+          style={{ padding: '6px 10px', fontSize: '0.85rem' }}
           title="Eliminar esta hoja"
         >
-          <Trash2 size={14} />
+          <Trash2 size={16} color="var(--accent-red)" />
         </button>
       </div>
     </div>

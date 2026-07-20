@@ -70,12 +70,16 @@ The application operates using a multi-process architecture communicating via lo
 
 ## Key Features
 
+- **Artisanal Hand-Drawn / Sketchbook Interface:** Distinctive cut-paper and sketchbook aesthetic (`#fdfbf7` warm dotted paper background, organic wobbly borders, solid offset shadows, tape and tack decorations) powered by authentic handwritten typography (`Kalam` for headers/stamps and `Patrick Hand` for readable body text).
+- **Instant GPU-Accelerated Optical Studio (0ms Latency):** Dual-engine preview studio applying real-time browser GPU hardware filters (`brightness`, `contrast`, `rotation`, and `B&W binarization threshold`) at 60 FPS without UI block or network delay, while asynchronously synchronizing high-resolution raster adjustments on disk.
+- **Advanced PDF Toolbox & Extraction Suite (`Herramientas PDF`):**
+  - **Extract PDF Pages to Images:** Extract full documents or specific page ranges (e.g., `1-3, 5, 8`) to high-resolution `PNG` (Lossless) or `JPG` at `150`, `300`, or `600 DPI` with one-click `.ZIP` archive bundling.
+  - **Images to PDF Union:** Concatenate and organize multiple `PNG/JPG` image files into a single clean, unified PDF document.
+  - **Multi-Range PDF Split & Extraction:** Split a single document into multiple distinct PDFs in one step using comma-separated range rules (`1-3, 4, 5-10` automatically creates `Document_pages_1-3.pdf`, `Document_pages_4.pdf`, and `Document_pages_5-10.pdf`).
 - **Hardware Scanner Integration (WIA):** Direct communication with Windows Image Acquisition (WIA) hardware scanners via `pywin32`. Supports dynamic DPI selection (150, 300, 600 DPI), custom color profiles (Color, Grayscale, Black & White), and standard paper sizes (Letter, Legal, A4).
-- **Live Image Processing & Adjustments:** Real-time post-processing using Pillow. Users can apply non-destructive rotation, brightness tuning, contrast modifications, and threshold-based binarization filters directly to cached scanned pages.
-- **Interactive Page Management:** Intuitive drag-and-drop workspace built on `@dnd-kit/sortable`, allowing rapid reordering, selection, previewing, and selective deletion of pages before compilation.
+- **Interactive Page Management:** Intuitive drag-and-drop workspace built on `@dnd-kit/sortable`, allowing rapid reordering, selection, custom `.wobbly-checkbox` toggling, and selective deletion of pages before compilation.
 - **Lossless & Target-Size PDF Export:** High-fidelity PDF generation using `img2pdf` and `PyMuPDF`. Includes specialized compression profiles such as **Drive 25MB Mode** specifically tuned for email attachments and cloud storage limits.
-- **Batch Processing & ZIP Archives:** Multi-file compression queue supporting simultaneous optimization of existing PDFs and batch export as standard ZIP archives.
-- **Native Desktop Integration:** Seamless native Windows file dialogs triggered through Electron IPC and `pywebview`, providing intuitive "Open" and "Save As" workflows.
+- **Native Desktop Integration:** Seamless native Windows file dialogs triggered through Electron IPC and `pywebview`, providing intuitive "Open" and "Save As" workflows for PDFs and images.
 
 ---
 
@@ -110,6 +114,7 @@ icanScan/
 │   │   └── preload.cjs            # Context bridge for secure native dialog invocation
 │   ├── public/                    # Static assets
 │   ├── src/                       # React components, state, and UI styling
+│   │   └── components/            # UI components (`ScannerControls`, `PageGrid`, `PdfToolsView`, etc.)
 │   ├── package.json               # Frontend dependencies and scripts
 │   └── vite.config.js             # Vite bundler configuration
 ├── src/
@@ -118,7 +123,8 @@ icanScan/
 │       ├── main.py                # FastAPI endpoints, CORS, static mounting, server entry point
 │       ├── scanner_wia.py         # Hardware scanner interfacing via Windows Image Acquisition
 │       ├── image_processor.py     # Image manipulation, adjustments, and PDF conversion
-│       └── pdf_compressor.py      # Batch PDF compression engine and ZIP archiver
+│       ├── pdf_compressor.py      # Batch PDF compression engine and ZIP archiver
+│       └── pdf_tools.py           # Advanced PDF page extraction, union, and multi-range split suite
 ├── Iniciar_IcanScan_Como_App.bat  # Quick-launch Windows batch script with error trapping
 ├── pyproject.toml                 # Python package metadata and dependencies
 ├── uv.lock                        # Exact dependency lockfile for Python environment
@@ -226,6 +232,10 @@ The FastAPI backend exposes the following REST endpoints:
 | `POST` | `/api/pages/delete` | Removes specified pages and their cached assets from the disk. |
 | `POST` | `/api/export/pdf` | Compiles selected pages into a lossless or compressed PDF document. |
 | `POST` | `/api/export/save-to-path` | Exports PDF directly to a target absolute filesystem path. |
+| `POST` | `/api/tools/extract-images` | Extracts specific PDF page ranges to high-res PNG or JPG images at target DPI (`150`, `300`, `600`). |
+| `POST` | `/api/tools/images-to-pdf` | Concatenates multiple uploaded PNG/JPG images into a single unified PDF. |
+| `POST` | `/api/tools/split-pdf` | Splits a document into multiple independent PDF files based on comma-separated range specifications (`1-3, 4, 5-10`). |
+| `GET` | `/api/tools/download/{task_id}/{filename}` | Streams individual tool outputs (`.pdf` / `.png` / `.jpg`) or generated `.zip` packages. |
 | `POST` | `/api/compress/register` | Registers existing PDF files for the compression pipeline. |
 | `POST` | `/api/compress/process` | Executes PDF compression based on target profiles (e.g., `drive_25mb`). |
 | `GET` | `/api/compress/download/{id}` | Streams the processed compressed PDF file. |
