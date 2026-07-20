@@ -45,6 +45,12 @@ export default function PdfToolsView({ onShowModal }) {
   const [splitItems, setSplitItems] = useState([]);
   const [splitZipUrl, setSplitZipUrl] = useState('');
 
+  // Tab 4 State: Merge PDFs
+  const [selectedMergePdfs, setSelectedMergePdfs] = useState([]);
+  const [mergeOutputName, setMergeOutputName] = useState('Documentos_Combinados.pdf');
+  const [merging, setMerging] = useState(false);
+  const [mergedResult, setMergedResult] = useState(null);
+
   // Global Inspection Modal State
   const [inspectingItem, setInspectingItem] = useState(null); // { type: 'image' | 'pdf', url: string, filename: string, title?: string }
 
@@ -267,6 +273,156 @@ export default function PdfToolsView({ onShowModal }) {
     }
   };
 
+  // --- Handlers for Tab 4: Merge PDFs ---
+  const handleSelectMergePdfs = async () => {
+    const openFn = window.electronAPI?.openFileDialog || window.pywebview?.api?.open_pdf_dialog;
+    if (openFn) {
+      try {
+        const paths = await openFn();
+        if (paths && paths.length > 0) {
+          const newItems = [];
+          for (const path of paths) {
+            try {
+              const res = await fetch(`${API_BASE}/api/tools/pdf-info`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pdf_path: path })
+              });
+              if (res.ok) {
+                const data = await res.json();
+                if (data.info) {
+                  newItems.push({
+                    path,
+                    filename: data.info.filename,
+                    page_count: data.info.page_count,
+                    size_mb: data.info.size_mb || (data.info.size_kb / 1024).toFixed(2)
+                  });
+                }
+              }
+            } catch (e) {
+              console.error("Error getting info for merge pdf:", e);
+            }
+          }
+          setSelectedMergePdfs(prev => [...prev, ...newItems]);
+          setMergedResult(null);
+        }
+      } catch (err) {
+        console.error("Dialog error:", err);
+      }
+    } else {
+      document.getElementById("merge-pdf-input").click();
+    }
+  };
+
+  const handleWebUploadMerge = async (fileList) => {
+    const files = Array.from(fileList || []);
+    if (files.length === 0) return;
+    const directPaths = files.map(f => f.path).filter(Boolean);
+    if (directPaths.length === files.length) {
+      const newItems = [];
+      for (const path of directPaths) {
+        try {
+          const res = await fetch(`${API_BASE}/api/tools/pdf-info`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ pdf_path: path })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.info) {
+              newItems.push({
+                path,
+                filename: data.info.filename,
+                page_count: data.info.page_count,
+                size_mb: data.info.size_mb || (data.info.size_kb / 1024).toFixed(2)
+              });
+            }
+          }
+        } catch (e) {}
+      }
+      setSelectedMergePdfs(prev => [...prev, ...newItems]);
+      setMergedResult(null);
+      return;
+    }
+    const formData = new FormData();
+    files.forEach(f => formData.append('files', f));
+    try {
+      const res = await fetch(`${API_BASE}/api/tools/upload-temp`, {
+        method: 'POST',
+        body: formData
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.paths && data.info_dict) {
+          const newItems = data.paths.map(path => {
+            const info = data.info_dict[path] || {};
+            return {
+              path,
+              filename: info.filename || path.split('/').pop().split('\\').pop(),
+              page_count: info.page_count || 0,
+              size_mb: info.size_mb || (info.size_kb ? (info.size_kb / 1024).toFixed(2) : 0)
+            };
+          });
+          setSelectedMergePdfs(prev => [...prev, ...newItems]);
+          setMergedResult(null);
+        }
+      }
+    } catch (err) {
+      console.error("Error uploading merge fallback files:", err);
+    }
+  };
+
+  const handleRemoveMergePdf = (indexToRemove) => {
+    setSelectedMergePdfs(prev => prev.filter((_, idx) => idx !== indexToRemove));
+  };
+
+  const handleMoveMergePdf = (index, direction) => {
+    setSelectedMergePdfs(prev => {
+      const next = [...prev];
+      const targetIndex = index + direction;
+      if (targetIndex < 0 || targetIndex >= next.length) return prev;
+      const [moved] = next.splice(index, 1);
+      next.splice(targetIndex, 0, moved);
+      return next;
+    });
+  };
+
+  const handleMergeSubmit = async () => {
+    if (selectedMergePdfs.length < 2) {
+      onShowModal && onShowModal({ title: "Aviso", message: "Añade al menos 2 documentos PDF para poder combinarlos en un solo archivo." });
+      return;
+    }
+    setMerging(true);
+    setMergedResult(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/tools/merge-pdfs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          pdf_paths: selectedMergePdfs.map(item => item.path),
+          output_filename: mergeOutputName
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setMergedResult({
+          url: data.url,
+          filename: data.filename,
+          size_mb: data.size_mb,
+          page_count: data.page_count
+        });
+      } else {
+        const err = await res.json();
+        onShowModal && onShowModal({ title: "Error al combinar", message: err.detail || "No se pudo combinar los documentos seleccionados." });
+      }
+    } catch (err) {
+      console.error(err);
+      onShowModal && onShowModal({ title: "Error de conexión", message: "No se pudo conectar con el motor de combinación PDF." });
+    } finally {
+      setMerging(false);
+    }
+  };
+
   const triggerDownload = async (url, filename) => {
     const saveFn = window.electronAPI?.saveFileDialog || window.pywebview?.api?.save_file_dialog || window.pywebview?.api?.save_pdf_dialog;
     if (saveFn) {
@@ -377,6 +533,14 @@ export default function PdfToolsView({ onShowModal }) {
           });
         }} 
       />
+      <input 
+        id="merge-pdf-input" 
+        type="file" 
+        accept=".pdf" 
+        multiple 
+        style={{ display: 'none' }} 
+        onChange={(e) => handleWebUploadMerge(e.target.files)} 
+      />
 
       {/* Sub-tab Switcher Banner */}
       <div style={{ display: 'flex', gap: '16px', marginBottom: '28px', flexWrap: 'wrap' }}>
@@ -400,6 +564,13 @@ export default function PdfToolsView({ onShowModal }) {
           style={{ padding: '12px 22px', fontSize: '1.1rem' }}
         >
           <Scissors size={20} /> Dividir y Separar Multi-PDFs
+        </button>
+        <button 
+          onClick={() => setActiveSubTab('merge_pdfs')} 
+          className={`btn ${activeSubTab === 'merge_pdfs' ? 'btn-primary' : 'btn-secondary'}`}
+          style={{ padding: '12px 22px', fontSize: '1.1rem' }}
+        >
+          <Layers size={20} /> Unir / Combinar PDFs
         </button>
       </div>
 
@@ -813,6 +984,164 @@ export default function PdfToolsView({ onShowModal }) {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ================= SECTION 4: MERGE PDFS ================= */}
+      {activeSubTab === 'merge_pdfs' && (
+        <div className="paper-card-thick" style={{ padding: '30px', display: 'flex', flexDirection: 'column', gap: '24px', background: 'var(--bg-surface)' }}>
+          <div className="tack-decoration" />
+          
+          <div>
+            <h3 style={{ fontSize: '1.6rem', fontFamily: 'Kalam, cursive', margin: '0 0 6px 0', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <Layers size={24} color="var(--accent-red)" />
+              Unir / Combinar Múltiples Documentos PDF en Uno Solo
+            </h3>
+            <p style={{ fontSize: '1.05rem', color: 'var(--text-secondary)', margin: 0, fontFamily: 'Patrick Hand, cursive' }}>
+              Agrega todos los archivos PDF que desees combinar, organízalos en el orden exacto en el que deben aparecer y únelos en un solo documento.
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <button 
+              onClick={handleSelectMergePdfs}
+              className="btn btn-primary" 
+              style={{ padding: '12px 24px', fontSize: '1.1rem', background: 'var(--accent-red)', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}
+            >
+              <Plus size={20} /> Añadir Documentos PDF
+            </button>
+            <span style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', fontStyle: 'italic', fontFamily: 'Patrick Hand, cursive' }}>
+              Puedes seleccionar varios archivos a la vez en la ventana de exploración.
+            </span>
+          </div>
+
+          {selectedMergePdfs.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <label style={{ fontSize: '1.08rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                Documentos en orden de combinación ({selectedMergePdfs.length}):
+              </label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {selectedMergePdfs.map((pdf, idx) => (
+                  <div key={idx} className="postit-card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', background: '#fff', border: '2px solid var(--border-lead)', borderRadius: 'var(--wobbly-sm)', gap: '12px', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1, minWidth: 0 }}>
+                      <span style={{ fontWeight: 700, fontFamily: 'Kalam, cursive', fontSize: '1.15rem', background: 'var(--bg-muted)', width: '34px', height: '34px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--border-lead)', flexShrink: 0 }}>
+                        {idx + 1}
+                      </span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <strong style={{ display: 'block', fontSize: '1.12rem', fontFamily: 'Kalam, cursive', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {pdf.filename}
+                        </strong>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.92rem', color: 'var(--text-secondary)', fontFamily: 'Patrick Hand, cursive', flexWrap: 'wrap', marginTop: '2px' }}>
+                          {pdf.page_count > 0 && (
+                            <span className="stamp-badge" style={{ background: 'rgba(22, 163, 74, 0.15)', color: 'var(--accent-green)', padding: '2px 8px', fontSize: '0.82rem' }}>
+                              TOTAL: {pdf.page_count} PÁG{pdf.page_count !== 1 ? 'S' : ''}
+                            </span>
+                          )}
+                          <span>Peso: {pdf.size_mb} MB</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <button 
+                        onClick={() => handleMoveMergePdf(idx, -1)} 
+                        disabled={idx === 0} 
+                        className="btn btn-secondary" 
+                        style={{ padding: '6px 12px', fontSize: '0.9rem' }}
+                        title="Mover arriba en el orden"
+                      >
+                        ↑
+                      </button>
+                      <button 
+                        onClick={() => handleMoveMergePdf(idx, 1)} 
+                        disabled={idx === selectedMergePdfs.length - 1} 
+                        className="btn btn-secondary" 
+                        style={{ padding: '6px 12px', fontSize: '0.9rem' }}
+                        title="Mover abajo en el orden"
+                      >
+                        ↓
+                      </button>
+                      <button 
+                        onClick={() => handleRemoveMergePdf(idx)} 
+                        className="btn btn-secondary" 
+                        style={{ padding: '6px 10px', color: 'var(--accent-red)' }}
+                        title="Quitar de la lista"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px', alignItems: 'end', marginTop: '16px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '1.05rem', fontWeight: 600, marginBottom: '8px', color: 'var(--text-primary)' }}>
+                    Nombre del archivo resultante
+                  </label>
+                  <input 
+                    type="text" 
+                    value={mergeOutputName} 
+                    onChange={(e) => setMergeOutputName(e.target.value)} 
+                    placeholder="Documentos_Combinados.pdf"
+                    style={{ width: '100%', fontSize: '1.05rem' }} 
+                  />
+                </div>
+                <button 
+                  onClick={handleMergeSubmit}
+                  disabled={merging || selectedMergePdfs.length < 2}
+                  className="btn btn-primary"
+                  style={{ padding: '14px 28px', fontSize: '1.15rem', background: 'var(--accent-red)', color: '#fff' }}
+                >
+                  {merging ? (
+                    <>
+                      <RefreshCcw size={20} className="spin-anim" /> Combinando...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles size={20} /> Combinar Documentos
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {mergedResult && (
+                <div className="postit-card" style={{ marginTop: '20px', padding: '24px', background: '#e8f5e9', border: '2px solid var(--accent-green)', transform: 'rotate(0.4deg)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+                    <div>
+                      <h4 style={{ margin: '0 0 6px 0', fontSize: '1.35rem', fontFamily: 'Kalam, cursive', color: 'var(--accent-green)' }}>
+                        ¡Documentos Combinados Exitosamente!
+                      </h4>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap', fontSize: '1rem', fontFamily: 'Patrick Hand, cursive' }}>
+                        <strong style={{ fontFamily: 'Kalam, cursive', fontSize: '1.15rem' }}>{mergedResult.filename}</strong>
+                        {mergedResult.page_count > 0 && (
+                          <span className="stamp-badge" style={{ background: 'var(--accent-green)', color: '#fff', padding: '2px 8px', fontSize: '0.85rem' }}>
+                            TOTAL: {mergedResult.page_count} PÁGS
+                          </span>
+                        )}
+                        <span style={{ color: 'var(--text-secondary)' }}>{mergedResult.size_mb} MB</span>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <button 
+                        onClick={() => setInspectingItem({ type: 'pdf', url: mergedResult.url, filename: mergedResult.filename, title: `PDF Combinado (${mergedResult.filename})` })}
+                        className="btn btn-secondary"
+                        style={{ padding: '10px 18px', fontSize: '1rem' }}
+                      >
+                        <Eye size={18} /> Inspeccionar
+                      </button>
+                      <button 
+                        onClick={() => triggerDownload(mergedResult.url, mergedResult.filename)}
+                        className="btn btn-primary"
+                        style={{ padding: '10px 20px', fontSize: '1rem', background: 'var(--accent-red)', color: '#fff' }}
+                      >
+                        <Download size={18} /> Descargar PDF
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

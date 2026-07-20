@@ -76,6 +76,7 @@ The application operates using a multi-process architecture communicating via lo
   - **Extract PDF Pages to Images:** Extract full documents or specific page ranges (e.g., `1-3, 5, 8`) to high-resolution `PNG` (Lossless) or `JPG` at `150`, `300`, or `600 DPI` with one-click `.ZIP` archive bundling. Includes **Automatic Page Counter (`TOTAL: X PÁGS`)** metadata detection when selecting any document.
   - **Images to PDF Union:** Concatenate and organize multiple `PNG/JPG` image files into a single clean, unified PDF document. Equipped with **Universal Multi-Mode File Import (`Electron`, `pywebview` & Web Form Fallback)** for guaranteed image loading.
   - **Multi-Range PDF Split & Extraction:** Split a single document into multiple distinct PDFs in one step using comma-separated range rules (`1-3, 4, 5-10` automatically creates `Document_pages_1-3.pdf`, `Document_pages_4.pdf`, and `Document_pages_5-10.pdf`) with instant page count indicators.
+  - **Merge / Combine Multiple PDFs (`Unir / Combinar PDFs`):** Combine multiple independent PDF files into a single unified document with custom reordering (`↑` / `↓`), instant page counting (`TOTAL: X PÁGS`), and standardized MB size reporting.
   - **Interactive Lightbox Inspection Studio (`<Eye />` Inspector):** High-resolution full-screen preview and inspection modal for both extracted images and generated PDF documents, allowing users to verify quality, zoom, and scroll before exporting or downloading.
 - **Hardware Scanner Integration (WIA):** Direct communication with Windows Image Acquisition (WIA) hardware scanners via `pywin32`. Supports dynamic DPI selection (150, 300, 600 DPI), custom color profiles (Color, Grayscale, Black & White), and standard paper sizes (Letter, Legal, A4).
 - **Interactive Page Management:** Intuitive drag-and-drop workspace built on `@dnd-kit/sortable`, allowing rapid reordering, selection, custom `.wobbly-checkbox` toggling, and selective deletion of pages before compilation.
@@ -238,6 +239,7 @@ The FastAPI backend exposes the following REST endpoints:
 | `POST` | `/api/tools/extract-images` | Extracts specific PDF page ranges to high-res PNG or JPG images at target DPI (`150`, `300`, `600`). |
 | `POST` | `/api/tools/images-to-pdf` | Concatenates multiple uploaded PNG/JPG images into a single unified PDF. |
 | `POST` | `/api/tools/split-pdf` | Splits a document into multiple independent PDF files based on comma-separated range specifications (`1-3, 4, 5-10`). |
+| `POST` | `/api/tools/merge-pdfs` | Merges multiple selected PDF files into a single continuous PDF document with custom ordering. |
 | `GET` | `/api/tools/download/{task_id}/{filename}` | Streams individual tool outputs (`.pdf` / `.png` / `.jpg`) or generated `.zip` packages. |
 | `POST` | `/api/compress/register` | Registers existing PDF files for the compression pipeline. |
 | `POST` | `/api/compress/process` | Executes PDF compression based on target profiles (e.g., `drive_25mb`). |

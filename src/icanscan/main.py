@@ -67,6 +67,10 @@ class SplitPdfRequest(BaseModel):
     pdf_path: str
     range_spec: str = "1"
 
+class MergePdfsRequest(BaseModel):
+    pdf_paths: List[str]
+    output_filename: str = "Documentos_Combinados.pdf"
+
 class PdfInfoRequest(BaseModel):
     pdf_path: str
 
@@ -382,6 +386,24 @@ def split_pdf_multi_ranges(request: SplitPdfRequest):
         return {"success": True, "items": items, "zip_url": zip_url, "task_id": task_id}
     except Exception as e:
         logger.error(f"Error splitting PDF: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/tools/merge-pdfs")
+def merge_multiple_pdfs(request: MergePdfsRequest):
+    try:
+        output_path, url, size_mb, total_pages = pdf_tools.merge_pdfs(
+            pdf_paths=request.pdf_paths,
+            output_filename=request.output_filename
+        )
+        return {
+            "success": True,
+            "url": url,
+            "size_mb": size_mb,
+            "page_count": total_pages,
+            "filename": os.path.basename(output_path)
+        }
+    except Exception as e:
+        logger.error(f"Error merging PDFs: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 class ToolSaveToPathRequest(BaseModel):

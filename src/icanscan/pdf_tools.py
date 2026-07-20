@@ -257,3 +257,37 @@ def split_or_extract_pdf_ranges(pdf_path: str, range_spec: str) -> Tuple[List[Di
             
     doc.close()
     return extracted_pdfs, zip_path, task_id
+
+def merge_pdfs(pdf_paths: List[str], output_filename: str = "Documentos_Combinados.pdf") -> Tuple[str, str, float, int]:
+    """
+    Merges multiple PDF files into a single PDF using PyMuPDF.
+    Returns: (output_path, url, size_mb, page_count)
+    """
+    task_id = uuid.uuid4().hex[:8]
+    task_dir = os.path.join(_get_tools_cache_dir(), task_id)
+    os.makedirs(task_dir, exist_ok=True)
+    
+    if not output_filename.lower().endswith(".pdf"):
+        output_filename += ".pdf"
+        
+    output_path = os.path.join(task_dir, output_filename)
+    
+    merged_doc = fitz.open()
+    total_pages = 0
+    for p in pdf_paths:
+        if not os.path.exists(p):
+            continue
+        try:
+            sub_doc = fitz.open(p)
+            merged_doc.insert_pdf(sub_doc)
+            total_pages += len(sub_doc)
+            sub_doc.close()
+        except Exception:
+            continue
+            
+    merged_doc.save(output_path)
+    merged_doc.close()
+    
+    size_mb = round(os.path.getsize(output_path) / (1024 * 1024), 2)
+    url = f"/cache/tools/{task_id}/{output_filename}"
+    return output_path, url, size_mb, total_pages
