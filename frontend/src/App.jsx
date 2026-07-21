@@ -349,7 +349,7 @@ export default function App() {
           <button 
             onClick={() => showModal({
               title: 'Apoyar a iCanScan Studio ❤️',
-              message: '¡Gracias por utilizar iCanScan Studio!\n\nEste software es y siempre será una herramienta libre, 100% gratuita, sin anuncios ni suscripciones, diseñada con pasión para tu productividad y privacidad.\n\nSi esta app te ha facilitado el trabajo o ahorrado tiempo valioso, puedes agradecer y apoyar su mantenimiento e innovación continua invitándole un café al creador ☕.',
+              message: '¡Gracias por utilizar iCanScan Studio!\n\nEste software es y siempre será una herramienta libre, 100% gratuita, sin anuncios ni suscripciones, diseñada con pasión para tu productividad y privacidad.\n\nSi esta app te ha facilitado el trabajo o ahorrado tiempo valioso, puedes agradecer y apoyar su mantenimiento e innovación continua invitándole un chocolate caliente al creador ☕.',
               type: 'support'
             })}
             className="tab-btn"
