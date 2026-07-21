@@ -2,8 +2,10 @@ import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Eye, GripVertical, Trash2, Check } from 'lucide-react';
+import { useLanguage } from '../i18n/LanguageContext';
 
 export default function SortablePageCard({ page, index, isSelected, onToggleSelect, onDelete, onInspect }) {
+  const { t } = useLanguage();
   const {
     attributes,
     listeners,
@@ -59,7 +61,7 @@ export default function SortablePageCard({ page, index, isSelected, onToggleSele
               display: 'flex', 
               alignItems: 'center' 
             }}
-            title="Arrastrar para reordenar hoja"
+            title={t('card.dragTooltip')}
           >
             <GripVertical size={20} />
           </button>
@@ -76,7 +78,7 @@ export default function SortablePageCard({ page, index, isSelected, onToggleSele
         <div 
           onClick={() => onToggleSelect(page.id)}
           className={`wobbly-checkbox ${isSelected ? 'checked' : ''}`}
-          title="Seleccionar hoja para exportar a PDF o eliminar"
+          title={t('card.checkboxTooltip')}
         >
           {isSelected && <Check size={18} strokeWidth={3.5} color="#ffffff" />}
         </div>
@@ -96,7 +98,7 @@ export default function SortablePageCard({ page, index, isSelected, onToggleSele
           overflow: 'hidden',
           borderBottom: '2px solid var(--border-lead)'
         }}
-        title="Haz clic para abrir el Estudio de Previsualización y Edición instantánea"
+        title={t('card.previewTooltip')}
       >
         <img 
           src={`${API_BASE}${page.preview_url}`} 
@@ -152,7 +154,7 @@ export default function SortablePageCard({ page, index, isSelected, onToggleSele
           onClick={(e) => { e.stopPropagation(); onDelete(page.id); }} 
           className="btn btn-secondary" 
           style={{ padding: '6px 10px', fontSize: '0.85rem' }}
-          title="Eliminar esta hoja"
+          title={t('card.deleteTooltip')}
         >
           <Trash2 size={16} color="var(--accent-red)" />
         </button>

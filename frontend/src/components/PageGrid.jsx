@@ -12,6 +12,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CheckSquare, FileText, Square, Trash2 } from 'lucide-react';
 import SortablePageCard from './SortablePageCard';
+import { useLanguage } from '../i18n/LanguageContext';
 
 export default function PageGrid({ 
   pages, 
@@ -31,6 +32,7 @@ export default function PageGrid({
       },
     })
   );
+  const { t } = useLanguage();
 
   if (!pages || pages.length === 0) {
     return (
@@ -66,9 +68,9 @@ export default function PageGrid({
           }}>
             <FileText size={40} color="var(--accent-red)" />
           </div>
-          <h2 style={{ fontSize: '1.8rem', marginBottom: '12px', fontFamily: 'Kalam, cursive' }}>¡Lienzo de Escaneo Vacío!</h2>
+          <h2 style={{ fontSize: '1.8rem', marginBottom: '12px', fontFamily: 'Kalam, cursive' }}>{t('grid.emptyTitle')}</h2>
           <p style={{ color: 'var(--text-primary)', fontSize: '1.15rem', lineHeight: 1.6, fontFamily: 'Patrick Hand, cursive' }}>
-            Conecta tu escáner WIA y haz clic en el botón <strong>+ Escanear Nueva Hoja</strong> de la izquierda para pegar aquí tus documentos digitalizados.
+            {t('grid.emptyBody')}
           </p>
         </div>
       </main>
@@ -96,11 +98,11 @@ export default function PageGrid({
             style={{ padding: '8px 14px', fontSize: '1rem' }}
           >
             {allSelected ? <CheckSquare size={18} color="var(--accent-red)" /> : <Square size={18} />}
-            {allSelected ? 'Deseleccionar Todo' : 'Seleccionar Todo'}
+            {allSelected ? t('grid.deselectAll') : t('grid.selectAll')}
           </button>
           <span style={{ fontSize: '1.1rem', color: 'var(--text-primary)', fontFamily: 'Patrick Hand, cursive' }}>
-            <strong style={{ fontFamily: 'Kalam, cursive', fontSize: '1.25rem' }}>{pages.length}</strong> {pages.length === 1 ? 'hoja en el cuaderno' : 'hojas en el cuaderno'} 
-            {selectedIds.length > 0 && ` (${selectedIds.length} seleccionadas)`}
+            <strong style={{ fontFamily: 'Kalam, cursive', fontSize: '1.25rem' }}>{pages.length}</strong> {pages.length === 1 ? t('grid.pagesCountSingular') : t('grid.pagesCountPlural')} 
+            {selectedIds.length > 0 && ` (${selectedIds.length} ${t('grid.selectedCount')})`}
           </span>
         </div>
 
@@ -111,7 +113,7 @@ export default function PageGrid({
             style={{ padding: '8px 16px', fontSize: '1rem' }}
           >
             <Trash2 size={18} />
-            Borrar Seleccionadas ({selectedIds.length})
+            {t('grid.deleteSelected')} ({selectedIds.length})
           </button>
         )}
       </div>

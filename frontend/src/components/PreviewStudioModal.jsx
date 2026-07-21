@@ -12,8 +12,10 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
+import { useLanguage } from '../i18n/LanguageContext';
 
 export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, onClose, onUpdatePage, onNavigate }) {
+  const { t } = useLanguage();
   const [rotation, setRotation] = useState(page.rotation || 0);
   const [brightness, setBrightness] = useState(page.brightness || 0.0);
   const [contrast, setContrast] = useState(page.contrast || 0.0);
@@ -138,7 +140,7 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
                 style={{ padding: '6px 12px', fontSize: '0.95rem' }}
                 title="Hoja Anterior (Flecha Izquierda)"
               >
-                <ChevronLeft size={18} /> Anterior
+                <ChevronLeft size={18} /> {t('studio.prev')}
               </button>
               
               <span className="stamp-badge" style={{
@@ -147,7 +149,7 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
                 padding: '4px 14px',
                 fontSize: '1rem'
               }}>
-                Hoja #{pageIndex + 1} de {totalCount}
+                {t('studio.sheetCounter', { current: pageIndex + 1, total: totalCount })}
               </span>
 
               <button
@@ -157,14 +159,14 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
                 style={{ padding: '6px 12px', fontSize: '0.95rem' }}
                 title="Hoja Siguiente (Flecha Derecha)"
               >
-                Siguiente <ChevronRight size={18} />
+                {t('studio.next')} <ChevronRight size={18} />
               </button>
             </div>
 
-            <h3 style={{ fontSize: '1.4rem', margin: 0, fontFamily: 'Kalam, cursive' }}>Estudio de Previsualización y Edición</h3>
+            <h3 style={{ fontSize: '1.4rem', margin: 0, fontFamily: 'Kalam, cursive' }}>{t('studio.title')}</h3>
             {isApplying && (
               <span style={{ fontSize: '0.95rem', color: 'var(--accent-blue)', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, fontFamily: 'Patrick Hand, cursive' }}>
-                <RefreshCcw size={16} className="animate-spin" /> Sincronizando en caché...
+                <RefreshCcw size={16} className="animate-spin" /> {t('studio.syncing')}
               </span>
             )}
           </div>
@@ -175,7 +177,7 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
               onClick={() => setZoom(z => Math.max(0.5, z - 0.25))} 
               className="btn btn-secondary" 
               style={{ padding: '8px 12px' }}
-              title="Alejar zoom"
+              title={t('studio.zoomOut')}
             >
               <ZoomOut size={18} />
             </button>
@@ -184,7 +186,7 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
               onClick={() => setZoom(z => Math.min(3.0, z + 0.25))} 
               className="btn btn-secondary" 
               style={{ padding: '8px 12px' }}
-              title="Acercar zoom"
+              title={t('studio.zoomIn')}
             >
               <ZoomIn size={18} />
             </button>
@@ -192,9 +194,9 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
               onClick={() => setZoom(1.0)} 
               className="btn btn-secondary" 
               style={{ padding: '8px 14px', fontSize: '0.95rem' }}
-              title="Ajustar a pantalla"
+              title={t('studio.fit')}
             >
-              <Maximize2 size={18} /> Fit
+              <Maximize2 size={18} /> {t('studio.fit')}
             </button>
           </div>
         </div>
@@ -284,8 +286,8 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
       {/* Right Inspector Panel - Sketchbook Notes */}
       <aside className="paper-card-thick studio-modal-aside">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <h4 style={{ fontSize: '1.4rem', fontFamily: 'Kalam, cursive' }}>Parámetros Ópticos</h4>
-          <button onClick={onClose} className="btn btn-secondary" style={{ padding: '8px' }} title="Cerrar">
+          <h4 style={{ fontSize: '1.4rem', fontFamily: 'Kalam, cursive' }}>{t('studio.opticalParams')}</h4>
+          <button onClick={onClose} className="btn btn-secondary" style={{ padding: '8px' }} title={t('modal.close')}>
             <X size={20} />
           </button>
         </div>
@@ -298,15 +300,15 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
           transform: 'rotate(1deg)'
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-            <span>Resolución de captura:</span>
+            <span>{t('studio.captureRes')}</span>
             <strong style={{ fontFamily: 'Kalam, cursive' }}>{page.dpi} DPI</strong>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-            <span>Dimensiones físicas:</span>
+            <span>{t('studio.physDim')}</span>
             <strong style={{ fontFamily: 'Kalam, cursive' }}>{page.width} × {page.height} px</strong>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span>Peso en caché:</span>
+            <span>{t('studio.cacheWeight')}</span>
             <strong style={{ color: 'var(--accent-blue)', fontFamily: 'Kalam, cursive' }}>{page.size_kb} KB</strong>
           </div>
         </div>
@@ -314,7 +316,7 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
         {/* 1. Rotation Controls */}
         <div>
           <label style={{ display: 'block', fontSize: '1.05rem', color: 'var(--text-primary)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600 }}>
-            <RotateCw size={18} color="var(--accent-red)" /> Rotación de Hoja ({rotation}°)
+            <RotateCw size={18} color="var(--accent-red)" /> {t('studio.rotationLabel')} ({rotation}°)
           </label>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: '10px' }}>
             <button onClick={() => handleRotate(90)} className="btn btn-secondary" style={{ fontSize: '0.95rem', padding: '8px' }}>
@@ -332,7 +334,7 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
         {/* 2. Brightness Slider */}
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.05rem', color: 'var(--text-primary)', marginBottom: '6px', fontWeight: 600 }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Sun size={18} color="var(--accent-blue)" /> Brillo (GPU Instantáneo)</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Sun size={18} color="var(--accent-blue)" /> {t('studio.brightnessLabel')}</span>
             <strong style={{ color: brightness !== 0 ? 'var(--accent-red)' : 'inherit', fontFamily: 'Kalam, cursive', fontSize: '1.15rem' }}>{brightness > 0 ? `+${brightness}` : brightness}</strong>
           </div>
           <input 
@@ -348,7 +350,7 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
         {/* 3. Contrast Slider */}
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.05rem', color: 'var(--text-primary)', marginBottom: '6px', fontWeight: 600 }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Contrast size={18} color="var(--accent-blue)" /> Contraste (GPU Instantáneo)</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Contrast size={18} color="var(--accent-blue)" /> {t('studio.contrastLabel')}</span>
             <strong style={{ color: contrast !== 0 ? 'var(--accent-red)' : 'inherit', fontFamily: 'Kalam, cursive', fontSize: '1.15rem' }}>{contrast > 0 ? `+${contrast}` : contrast}</strong>
           </div>
           <input 
@@ -371,8 +373,8 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
           cursor: 'pointer'
         }} onClick={() => setBwFilter(!bwFilter)}>
           <div>
-            <span style={{ fontSize: '1.1rem', fontWeight: 700, display: 'block', fontFamily: 'Kalam, cursive' }}>Filtro Blanco/Negro</span>
-            <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Umbral de alto contraste instantáneo</span>
+            <span style={{ fontSize: '1.1rem', fontWeight: 700, display: 'block', fontFamily: 'Kalam, cursive' }}>{t('studio.bwLabel')}</span>
+            <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{t('studio.bwSub')}</span>
           </div>
           <div className={`wobbly-checkbox ${bwFilter ? 'checked' : ''}`}>
             {bwFilter && <Check size={18} strokeWidth={3.5} color="#ffffff" />}
@@ -383,11 +385,11 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
         <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <button onClick={onClose} className="btn btn-primary" style={{ width: '100%', padding: '14px', background: 'var(--accent-red)', color: '#ffffff', fontFamily: 'Kalam, cursive', fontSize: '1.25rem', fontWeight: 700, boxShadow: '4px 4px 0px 0px #2d2d2d' }}>
             <Check size={22} />
-            Confirmar y Guardar Hoja
+            {t('studio.confirmSave')}
           </button>
           <button onClick={handleReset} className="btn btn-secondary" style={{ width: '100%', padding: '10px', fontSize: '1rem' }}>
             <RefreshCcw size={16} />
-            Restablecer Valores
+            {t('studio.resetValues')}
           </button>
         </div>
       </aside>

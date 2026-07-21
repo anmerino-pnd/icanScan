@@ -7,11 +7,13 @@ import ExportBar from './components/ExportBar';
 import CustomModal from './components/CustomModal';
 import PdfCompressorView from './components/PdfCompressorView';
 import PdfToolsView from './components/PdfToolsView';
-import { Layers, Archive, Wrench, Heart } from 'lucide-react';
+import { Layers, Archive, Wrench, Heart, Languages } from 'lucide-react';
+import { useLanguage } from './i18n/LanguageContext';
 
 const API_BASE = "http://localhost:8000";
 
 export default function App() {
+  const { t, lang, toggleLang } = useLanguage();
   const [scanners, setScanners] = useState([
     { id: 'virtual-scanner-sim', name: 'Escáner Virtual Simulación (300 DPI - Alta Fidelidad)', type: 'virtual' }
   ]);
@@ -323,41 +325,75 @@ export default function App() {
             </div>
           </div>
 
-          <button 
-            onClick={() => showModal({
-              title: 'Apoyar a iCanScan Studio',
-              message: '¡Gracias por utilizar iCanScan Studio!\n\nEste software es y siempre será una herramienta libre, 100% gratuita, sin anuncios ni suscripciones, diseñada con pasión para tu productividad y privacidad.\n\nSi esta aplicación te ha facilitado el trabajo o ahorrado tiempo valioso, puedes agradecer y apoyar su mantenimiento e innovación continua invitándole un chocolate caliente al creador.',
-              type: 'support'
-            })}
-            style={{
-              background: 'transparent',
-              color: 'var(--text-secondary)',
-              border: '1px dashed var(--border-lead)',
-              borderRadius: 'var(--wobbly-sm)',
-              padding: '4px 12px',
-              fontSize: '0.9rem',
-              fontFamily: 'Patrick Hand, cursive',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              cursor: 'pointer',
-              transition: 'all 0.15s ease'
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.color = 'var(--text-primary)';
-              e.currentTarget.style.borderStyle = 'solid';
-              e.currentTarget.style.background = 'var(--bg-surface)';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.color = 'var(--text-secondary)';
-              e.currentTarget.style.borderStyle = 'dashed';
-              e.currentTarget.style.background = 'transparent';
-            }}
-            title="iCanScan Studio es 100% gratuito. Contribuir de forma voluntaria al proyecto."
-          >
-            <Heart size={14} style={{ color: '#ef4444', opacity: 0.8 }} />
-            <span>Contribuir al proyecto</span>
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <button 
+              onClick={toggleLang}
+              style={{
+                background: 'transparent',
+                color: 'var(--text-secondary)',
+                border: '1px dashed var(--border-lead)',
+                borderRadius: 'var(--wobbly-sm)',
+                padding: '4px 12px',
+                fontSize: '0.9rem',
+                fontFamily: 'Patrick Hand, cursive',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.color = 'var(--text-primary)';
+                e.currentTarget.style.borderStyle = 'solid';
+                e.currentTarget.style.background = 'var(--bg-surface)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.color = 'var(--text-secondary)';
+                e.currentTarget.style.borderStyle = 'dashed';
+                e.currentTarget.style.background = 'transparent';
+              }}
+              title={lang === 'es' ? 'Cambiar idioma a Inglés / Switch to English' : 'Switch language to Spanish / Cambiar a Español'}
+            >
+              <Languages size={14} style={{ opacity: 0.8 }} />
+              <span>{lang === 'es' ? 'Español / ES' : 'English / EN'}</span>
+            </button>
+
+            <button 
+              onClick={() => showModal({
+                title: t('app.supportModal.title'),
+                message: t('app.supportModal.message'),
+                type: 'support'
+              })}
+              style={{
+                background: 'transparent',
+                color: 'var(--text-secondary)',
+                border: '1px dashed var(--border-lead)',
+                borderRadius: 'var(--wobbly-sm)',
+                padding: '4px 12px',
+                fontSize: '0.9rem',
+                fontFamily: 'Patrick Hand, cursive',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.color = 'var(--text-primary)';
+                e.currentTarget.style.borderStyle = 'solid';
+                e.currentTarget.style.background = 'var(--bg-surface)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.color = 'var(--text-secondary)';
+                e.currentTarget.style.borderStyle = 'dashed';
+                e.currentTarget.style.background = 'transparent';
+              }}
+              title={lang === 'es' ? 'iCanScan Studio es 100% gratuito. Contribuir al proyecto.' : 'iCanScan Studio is 100% free. Support the project.'}
+            >
+              <Heart size={14} style={{ color: '#ef4444', opacity: 0.8 }} />
+              <span>{t('app.nav.support')}</span>
+            </button>
+          </div>
         </div>
 
         {/* Folder / Sketchbook Tab Navigation */}
@@ -367,21 +403,21 @@ export default function App() {
             className={`tab-btn ${activeTab === 'studio' ? 'active' : ''}`}
           >
             <Layers size={18} />
-            Mesa de Trabajo y Escaneo
+            {t('app.nav.studio')}
           </button>
           <button 
             onClick={() => setActiveTab('compressor')}
             className={`tab-btn ${activeTab === 'compressor' ? 'active' : ''}`}
           >
             <Archive size={18} />
-            Compresión Drive (25 MB)
+            {t('app.nav.compressor')}
           </button>
           <button 
             onClick={() => setActiveTab('tools')}
             className={`tab-btn ${activeTab === 'tools' ? 'active' : ''}`}
           >
             <Wrench size={18} />
-            Herramientas y Extracción PDF
+            {t('app.nav.tools')}
           </button>
         </nav>
       </header>

@@ -1,7 +1,9 @@
 import React from 'react';
 import { Download, FileDown, Layers, ShieldCheck, Trash2, CheckCircle2 } from 'lucide-react';
+import { useLanguage } from '../i18n/LanguageContext';
 
 export default function ExportBar({ pages = [], selectedIds = [], exportQuality, setExportQuality, onExport, isExporting, onClearSession }) {
+  const { t } = useLanguage();
   if (!pages || pages.length === 0) return null;
 
   const hasSelection = selectedIds.length > 0;
@@ -29,10 +31,10 @@ export default function ExportBar({ pages = [], selectedIds = [], exportQuality,
           </div>
           <div>
             <span style={{ fontSize: '0.85rem', color: hasSelection ? 'var(--accent-red)' : 'var(--text-secondary)', display: 'block', textTransform: 'uppercase', fontFamily: 'Kalam, cursive', fontWeight: 700 }}>
-              {hasSelection ? 'Selección de Recorte Activa' : 'Reporte Completo de Libreta'}
+              {hasSelection ? t('export.selectionActive') : t('export.reportComplete')}
             </span>
             <strong style={{ fontSize: '1.25rem', fontFamily: 'Kalam, cursive' }}>
-              {hasSelection ? `${selectedIds.length} de ${pages.length} hojas seleccionadas` : `${pages.length} ${pages.length === 1 ? 'Hoja lista' : 'Hojas listas'}`}
+              {hasSelection ? `${selectedIds.length} / ${pages.length} ${t('export.selectedOf')}` : `${pages.length} ${pages.length === 1 ? t('export.sheetReady') : t('export.sheetsReady')}`}
             </strong>
           </div>
         </div>
@@ -41,7 +43,7 @@ export default function ExportBar({ pages = [], selectedIds = [], exportQuality,
 
         <div>
           <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'block', fontFamily: 'Patrick Hand, cursive' }}>
-            Peso Estimado
+            {t('export.estimatedSize')}
           </span>
           <strong style={{ fontSize: '1.2rem', color: 'var(--accent-blue)', fontFamily: 'Kalam, cursive' }}>
             ~{totalMb} MB
@@ -53,15 +55,15 @@ export default function ExportBar({ pages = [], selectedIds = [], exportQuality,
         {/* Quality Mode Selector */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
           <span style={{ fontSize: '0.85rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px', fontFamily: 'Kalam, cursive', fontWeight: 700 }}>
-            <ShieldCheck size={16} color="var(--accent-red)" /> Fidelidad Óptica PDF
+            <ShieldCheck size={16} color="var(--accent-red)" /> {t('export.fidelityLabel')}
           </span>
           <select 
             value={exportQuality} 
             onChange={(e) => setExportQuality(e.target.value)}
             style={{ padding: '6px 36px 6px 14px', fontSize: '1rem', background: 'var(--bg-surface)' }}
           >
-            <option value="lossless">Lossless Máximo (100% Sin Pérdida img2pdf)</option>
-            <option value="high">Alta Calidad Optimizado (JPEG 95% Archivo)</option>
+            <option value="lossless">{t('export.qualityLossless')}</option>
+            <option value="high">{t('export.qualityHigh')}</option>
           </select>
         </div>
       </div>
@@ -72,10 +74,10 @@ export default function ExportBar({ pages = [], selectedIds = [], exportQuality,
           onClick={onClearSession}
           className="btn btn-secondary"
           style={{ padding: '12px 18px', fontSize: '1rem', color: 'var(--accent-red)' }}
-          title="Eliminar todas las hojas del cuaderno y comenzar uno nuevo"
+          title={t('export.clearTooltip')}
         >
           <Trash2 size={18} />
-          Limpiar Sesión
+          {t('export.clearSession')}
         </button>
 
         <button 
@@ -95,12 +97,12 @@ export default function ExportBar({ pages = [], selectedIds = [], exportQuality,
           {isExporting ? (
             <>
               <FileDown className="animate-spin" size={22} />
-              Generando PDF...
+              {t('export.generatingPdf')}
             </>
           ) : (
             <>
               <Download size={22} />
-              {hasSelection ? `Exportar ${selectedIds.length} a PDF` : 'Exportar Todo a PDF'}
+              {hasSelection ? `${t('export.exportSelected')} (${selectedIds.length})` : t('export.exportAll')}
             </>
           )}
         </button>

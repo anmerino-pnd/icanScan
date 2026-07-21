@@ -16,8 +16,10 @@ import {
   Eye,
   X
 } from 'lucide-react';
+import { useLanguage } from '../i18n/LanguageContext';
 
 export default function PdfToolsView({ onShowModal }) {
+  const { t } = useLanguage();
   const [activeSubTab, setActiveSubTab] = useState('extract_img'); // 'extract_img', 'images_to_pdf', 'split_pdf'
 
   // Tab 1 State: Extract Images
@@ -549,28 +551,28 @@ export default function PdfToolsView({ onShowModal }) {
           className={`btn ${activeSubTab === 'extract_img' ? 'btn-primary' : 'btn-secondary'}`}
           style={{ padding: '12px 22px', fontSize: '1.1rem' }}
         >
-          <FileImage size={20} /> Extraer Imágenes del PDF
+          <FileImage size={20} /> {t('tools.tabExtract')}
         </button>
         <button 
           onClick={() => setActiveSubTab('images_to_pdf')} 
           className={`btn ${activeSubTab === 'images_to_pdf' ? 'btn-primary' : 'btn-secondary'}`}
           style={{ padding: '12px 22px', fontSize: '1.1rem' }}
         >
-          <ImageIcon size={20} /> Unir Imágenes en PDF
+          <ImageIcon size={20} /> {t('tools.tabUnion')}
         </button>
         <button 
           onClick={() => setActiveSubTab('split_pdf')} 
           className={`btn ${activeSubTab === 'split_pdf' ? 'btn-primary' : 'btn-secondary'}`}
           style={{ padding: '12px 22px', fontSize: '1.1rem' }}
         >
-          <Scissors size={20} /> Dividir y Separar Multi-PDFs
+          <Scissors size={20} /> {t('tools.tabSplit')}
         </button>
         <button 
           onClick={() => setActiveSubTab('merge_pdfs')} 
           className={`btn ${activeSubTab === 'merge_pdfs' ? 'btn-primary' : 'btn-secondary'}`}
           style={{ padding: '12px 22px', fontSize: '1.1rem' }}
         >
-          <Layers size={20} /> Unir / Combinar PDFs
+          <Layers size={20} /> {t('tools.tabMerge')}
         </button>
       </div>
 

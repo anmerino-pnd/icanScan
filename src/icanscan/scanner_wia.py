@@ -75,9 +75,21 @@ def _generate_simulation_page(dpi: int = 300, color_mode: str = "Color", paper_s
     """
     width = int(8.5 * dpi)
     height = int(11.0 * dpi)
-    if paper_size == "A4":
+    if paper_size == "Legal":
+        width = int(8.5 * dpi)
+        height = int(14.0 * dpi)
+    elif paper_size == "A4":
         width = int(8.27 * dpi)
         height = int(11.69 * dpi)
+    elif paper_size == "A3":
+        width = int(11.69 * dpi)
+        height = int(16.54 * dpi)
+    elif paper_size == "A5":
+        width = int(5.83 * dpi)
+        height = int(8.27 * dpi)
+    elif paper_size == "Photo4x6":
+        width = int(4.0 * dpi)
+        height = int(6.0 * dpi)
         
     bg_color = (252, 252, 248) if color_mode == "Color" else (248, 248, 248) if color_mode == "Grayscale" else (255, 255, 255)
     img = Image.new("RGB", (width, height), color=bg_color)
@@ -208,9 +220,21 @@ def scan_page(device_id: str, dpi: int = 300, color_mode: str = "Color", paper_s
         if paper_size == "Letter":
             target_w = int(8.5 * dpi)
             target_h = int(11.0 * dpi)
+        elif paper_size == "Legal":
+            target_w = int(8.5 * dpi)
+            target_h = int(14.0 * dpi)
         elif paper_size == "A4":
             target_w = int(8.27 * dpi)
             target_h = int(11.69 * dpi)
+        elif paper_size == "A3":
+            target_w = int(11.69 * dpi)
+            target_h = int(16.54 * dpi)
+        elif paper_size == "A5":
+            target_w = int(5.83 * dpi)
+            target_h = int(8.27 * dpi)
+        elif paper_size == "Photo4x6":
+            target_w = int(4.0 * dpi)
+            target_h = int(6.0 * dpi)
             
         if target_w and target_h:
             try:

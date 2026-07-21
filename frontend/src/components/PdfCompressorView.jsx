@@ -11,8 +11,10 @@ import {
   Sparkles,
   Sliders
 } from 'lucide-react';
+import { useLanguage } from '../i18n/LanguageContext';
 
 export default function PdfCompressorView({ onShowModal }) {
+  const { t } = useLanguage();
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [compressing, setCompressing] = useState(false);
@@ -282,10 +284,10 @@ export default function PdfCompressorView({ onShowModal }) {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px' }}>
         <div>
           <h2 style={{ fontFamily: 'Kalam, cursive', fontSize: '2rem', fontWeight: 700, margin: '0 0 6px 0', color: 'var(--text-primary)' }}>
-            Optimización y Compresión para Google Drive
+            {t('compressor.title')}
           </h2>
           <p style={{ margin: 0, fontSize: '1.15rem', color: 'var(--text-secondary)', fontFamily: 'Patrick Hand, cursive' }}>
-            Reduce el peso de tus documentos PDF por debajo del límite de 25 MB de Drive y adjuntos manteniendo trazos legibles.
+            {t('compressor.subTitle')}
           </p>
         </div>
 
@@ -297,7 +299,7 @@ export default function PdfCompressorView({ onShowModal }) {
             style={{ padding: '12px 26px', fontSize: '1.15rem', fontFamily: 'Kalam, cursive', fontWeight: 700, transform: 'rotate(1deg)' }}
           >
             <FolderOpen size={20} />
-            Seleccionar Documentos PDF
+            {t('tools.selectPdfBtn')}
           </button>
         </div>
       </div>
@@ -306,15 +308,14 @@ export default function PdfCompressorView({ onShowModal }) {
       <div className="paper-card" style={{ padding: '20px 26px', marginBottom: '26px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <Sliders size={20} color="var(--accent-red)" />
-          <span style={{ fontSize: '1.1rem', fontWeight: 700, fontFamily: 'Kalam, cursive' }}>Perfil de Reducción:</span>
+          <span style={{ fontSize: '1.1rem', fontWeight: 700, fontFamily: 'Kalam, cursive' }}>{t('compressor.modeLabel')}:</span>
           <select 
             value={globalMode} 
             onChange={(e) => setGlobalMode(e.target.value)}
             style={{ minWidth: '320px' }}
           >
-            <option value="drive_25mb">Optimización Inteligente Drive (Objetivo menor a 25 MB)</option>
-            <option value="medium">Compresión Media Balanceada (JPEG 75% Archivo)</option>
-            <option value="extreme">Compresión Extrema Ligera (Web y Correo Electrónico)</option>
+            <option value="drive_25mb">{t('compressor.modeDrive')}</option>
+            <option value="extreme">{t('compressor.modeExtreme')}</option>
           </select>
         </div>
 
@@ -342,11 +343,11 @@ export default function PdfCompressorView({ onShowModal }) {
             >
               {compressing ? (
                 <>
-                  <RefreshCcw size={18} className="animate-spin" /> Comprimiendo...
+                  <RefreshCcw size={18} className="animate-spin" /> {t('compressor.compressingBtn')}
                 </>
               ) : (
                 <>
-                  <Sparkles size={18} /> Comprimir Todos
+                  <Sparkles size={18} /> {t('compressor.compressBtn')}
                 </>
               )}
             </button>
@@ -422,25 +423,25 @@ export default function PdfCompressorView({ onShowModal }) {
                       disabled={compressing}
                       className="btn btn-secondary"
                       style={{ padding: '8px 16px', fontSize: '0.95rem' }}
-                      title="Comprimir solo este documento"
+                      title={t('compressor.compressBtn')}
                     >
-                      <Sparkles size={16} /> {isCompressed ? 'Re-comprimir' : 'Comprimir'}
+                      <Sparkles size={16} /> {t('compressor.compressBtn')}
                     </button>
 
                     <button 
                       onClick={() => handleDownloadSingle(file)}
                       className="btn btn-secondary"
                       style={{ padding: '8px 16px', fontSize: '0.95rem' }}
-                      title="Descargar PDF"
+                      title={t('compressor.downloadBtn')}
                     >
-                      <Download size={16} /> Descargar PDF
+                      <Download size={16} /> {t('compressor.downloadBtn')}
                     </button>
 
                     <button 
                       onClick={() => handleDelete(file.id)}
                       className="btn btn-secondary"
                       style={{ padding: '8px 12px', color: 'var(--accent-red)' }}
-                      title="Quitar de la lista"
+                      title={t('compressor.deleteBtn')}
                     >
                       <Trash2 size={18} />
                     </button>

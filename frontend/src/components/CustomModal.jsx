@@ -1,7 +1,9 @@
 import React from 'react';
 import { AlertCircle, HelpCircle, X, Heart, ExternalLink } from 'lucide-react';
+import { useLanguage } from '../i18n/LanguageContext';
 
 export default function CustomModal({ isOpen, title, message, type = 'alert', onConfirm, onClose }) {
+  const { t } = useLanguage();
   if (!isOpen) return null;
 
   return (
@@ -41,7 +43,7 @@ export default function CustomModal({ isOpen, title, message, type = 'alert', on
             cursor: 'pointer',
             padding: '4px'
           }}
-          title="Cerrar"
+          title={t('modal.close')}
         >
           <X size={24} />
         </button>
@@ -74,7 +76,7 @@ export default function CustomModal({ isOpen, title, message, type = 'alert', on
             color: 'var(--text-primary)',
             margin: 0
           }}>
-            {title || (type === 'confirm' ? 'Confirmación Requerida' : type === 'support' ? 'Apoyar el Proyecto' : 'Aviso del Cuaderno')}
+            {title || (type === 'confirm' ? t('modal.confirmRequired') : type === 'support' ? t('modal.supportProject') : t('modal.notebookNotice'))}
           </h3>
         </div>
 
@@ -97,7 +99,7 @@ export default function CustomModal({ isOpen, title, message, type = 'alert', on
                 className="btn btn-secondary"
                 style={{ padding: '10px 22px', fontSize: '1.05rem' }}
               >
-                Volver al Cuaderno
+                {t('modal.backToNotebook')}
               </button>
               <button 
                 onClick={() => {
@@ -119,7 +121,7 @@ export default function CustomModal({ isOpen, title, message, type = 'alert', on
                   gap: '8px'
                 }}
               >
-                <span>Invítame un chocolate caliente por PayPal</span>
+                <span>{t('modal.paypalBtn')}</span>
                 <ExternalLink size={18} />
               </button>
             </>
@@ -131,7 +133,7 @@ export default function CustomModal({ isOpen, title, message, type = 'alert', on
                   className="btn btn-secondary"
                   style={{ padding: '10px 22px', fontSize: '1.05rem' }}
                 >
-                  Cancelar
+                  {t('modal.cancel')}
                 </button>
               )}
               <button 
@@ -150,7 +152,7 @@ export default function CustomModal({ isOpen, title, message, type = 'alert', on
                   boxShadow: '3px 3px 0px 0px #2d2d2d'
                 }}
               >
-                {type === 'confirm' ? 'Confirmar Acción' : '¡Entendido!'}
+                {type === 'confirm' ? t('modal.confirmAction') : t('modal.understood')}
               </button>
             </>
           )}
