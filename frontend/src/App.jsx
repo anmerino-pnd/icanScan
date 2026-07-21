@@ -7,7 +7,7 @@ import ExportBar from './components/ExportBar';
 import CustomModal from './components/CustomModal';
 import PdfCompressorView from './components/PdfCompressorView';
 import PdfToolsView from './components/PdfToolsView';
-import { Layers, Archive, Wrench } from 'lucide-react';
+import { Layers, Archive, Wrench, Heart } from 'lucide-react';
 
 const API_BASE = "http://localhost:8000";
 
@@ -344,6 +344,31 @@ export default function App() {
           >
             <Wrench size={18} />
             Herramientas y Extracción PDF
+          </button>
+
+          <button 
+            onClick={() => showModal({
+              title: 'Apoyar a iCanScan Studio ❤️',
+              message: '¡Gracias por utilizar iCanScan Studio!\n\nEste software es y siempre será una herramienta libre, 100% gratuita, sin anuncios ni suscripciones, diseñada con pasión para tu productividad y privacidad.\n\nSi esta app te ha facilitado el trabajo o ahorrado tiempo valioso, puedes agradecer y apoyar su mantenimiento e innovación continua invitándole un café al creador ☕.',
+              type: 'support'
+            })}
+            className="tab-btn"
+            style={{
+              marginLeft: 'auto',
+              background: '#fffdf5',
+              color: '#854d0e',
+              borderColor: '#f59e0b',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 16px',
+              fontSize: '1rem',
+              boxShadow: '2px -2px 0px 0px #b45309'
+            }}
+            title="iCanScan Studio es y será siempre 100% gratuito. Si deseas apoyar su desarrollo, puedes donar un café :)"
+          >
+            <Heart size={16} style={{ color: '#ef4444', fill: '#ef4444' }} />
+            <span>¿Te gusta? Apóyame ☕</span>
           </button>
         </nav>
       </header>
