@@ -176,25 +176,36 @@ cd ..
 
 ---
 
-## Usage Instructions
+## Usage Instructions (Multi-Platform Guide)
+
+`iCanScan Studio` is designed to run natively across major operating systems. Depending on your platform, choose the appropriate workflow below:
 
 ### Method 1: Desktop Application Mode (Recommended)
 
-To launch the integrated Electron desktop application with the automated Python backend subprocess:
+#### 🪟 For Windows Users
+Windows users have two ways to run the application:
+1. **Direct App Download (Microsoft Store / Packaged App):** If downloading from the **Microsoft Store** or via the pre-built `.appx` package, simply install and launch `iCanScan Studio` directly. No manual dependencies or command-line steps are required.
+2. **From Source (Cloned Repository):** If you cloned the git repository (`git clone https://github.com/anmerino-pnd/icanScan.git`), double-click the provided Windows batch launcher in the root directory:
+   ```
+   Iniciar_IcanScan_Como_App.bat
+   ```
+   *Note: This script automatically syncs your `uv` Python environment, starts the backend, and launches the Electron desktop app.*
 
-#### Option A: Using the Windows Batch Launcher
-Double-click the provided batch file in the root directory:
-```
-Iniciar_IcanScan_Como_App.bat
-```
-*Note: The script automatically handles directory navigation, launches the desktop app, and keeps the terminal window open if any initialization errors occur.*
+#### 🐧 / 🍏 For Linux & macOS Users
+If you are running on **Linux (Ubuntu, Debian, Fedora, Arch, etc.)** or **macOS (Apple Silicon M1/M2/M3 or Intel)**, you can run the full suite directly from the cloned repository. 
+*(Note: Physical WIA scanner driver support is Windows-exclusive. On Linux/macOS, the app automatically activates the **High-Fidelity Virtual Scanner Simulator** along with the complete **PDF & Image Extraction Suite**, **Drive 25MB Compressor**, **Page Splitter/Merger**, and **Inspection Studio**).*
 
-#### Option B: Using the Command Line
-From the root directory, start the frontend and backend together via npm:
-```bash
-cd frontend
-npm run app
-```
+1. Clone the repository and navigate into the project folder:
+   ```bash
+   git clone https://github.com/anmerino-pnd/icanScan.git
+   cd icanScan
+   ```
+2. Make the launcher script executable and run it:
+   ```bash
+   chmod +x Iniciar_IcanScan_Linux_Mac.sh
+   ./Iniciar_IcanScan_Linux_Mac.sh
+   ```
+   *Note: Or manually via command line: `cd frontend && npm run app`.*
 
 ### Method 2: Standalone API Server Mode
 
