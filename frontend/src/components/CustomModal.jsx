@@ -119,7 +119,7 @@ export default function CustomModal({ isOpen, title, message, type = 'alert', on
                   gap: '8px'
                 }}
               >
-                <span>☕ Invítame un chocolate caliente por PayPal</span>
+                <span>Invítame un chocolate caliente por PayPal</span>
                 <ExternalLink size={18} />
               </button>
             </>

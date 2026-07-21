@@ -297,29 +297,67 @@ export default function App() {
         position: 'relative',
         zIndex: 20
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', paddingBottom: '12px' }}>
-          <div className="animate-pulse-bounce" style={{
-            width: '44px',
-            height: '44px',
-            borderRadius: 'var(--wobbly-sm)',
-            background: 'var(--bg-postit)',
-            border: '3px solid var(--border-lead)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '3px 3px 0px 0px #2d2d2d',
-            transform: 'rotate(-3deg)'
-          }}>
-            <span style={{ fontFamily: 'Kalam, cursive', fontWeight: 700, fontSize: '1.4rem', color: 'var(--text-primary)' }}>iS</span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', paddingBottom: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div className="animate-pulse-bounce" style={{
+              width: '44px',
+              height: '44px',
+              borderRadius: 'var(--wobbly-sm)',
+              background: 'var(--bg-postit)',
+              border: '3px solid var(--border-lead)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '3px 3px 0px 0px #2d2d2d',
+              transform: 'rotate(-3deg)'
+            }}>
+              <span style={{ fontFamily: 'Kalam, cursive', fontWeight: 700, fontSize: '1.4rem', color: 'var(--text-primary)' }}>iS</span>
+            </div>
+            <div>
+              <h1 style={{ fontFamily: 'Kalam, cursive', fontSize: '1.7rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                iCanScan
+                <span className="stamp-badge" style={{ fontSize: '0.75rem', background: 'var(--accent-red)', color: '#ffffff', border: '2px solid var(--border-lead)', transform: 'rotate(3deg)' }}>
+                  STUDIO
+                </span>
+              </h1>
+            </div>
           </div>
-          <div>
-            <h1 style={{ fontFamily: 'Kalam, cursive', fontSize: '1.7rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              iCanScan
-              <span className="stamp-badge" style={{ fontSize: '0.75rem', background: 'var(--accent-red)', color: '#ffffff', border: '2px solid var(--border-lead)', transform: 'rotate(3deg)' }}>
-                STUDIO
-              </span>
-            </h1>
-          </div>
+
+          <button 
+            onClick={() => showModal({
+              title: 'Apoyar a iCanScan Studio',
+              message: '¡Gracias por utilizar iCanScan Studio!\n\nEste software es y siempre será una herramienta libre, 100% gratuita, sin anuncios ni suscripciones, diseñada con pasión para tu productividad y privacidad.\n\nSi esta aplicación te ha facilitado el trabajo o ahorrado tiempo valioso, puedes agradecer y apoyar su mantenimiento e innovación continua invitándole un chocolate caliente o café al creador.',
+              type: 'support'
+            })}
+            style={{
+              background: 'transparent',
+              color: 'var(--text-secondary)',
+              border: '1px dashed var(--border-lead)',
+              borderRadius: 'var(--wobbly-sm)',
+              padding: '4px 12px',
+              fontSize: '0.9rem',
+              fontFamily: 'Patrick Hand, cursive',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.color = 'var(--text-primary)';
+              e.currentTarget.style.borderStyle = 'solid';
+              e.currentTarget.style.background = 'var(--bg-surface)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.color = 'var(--text-secondary)';
+              e.currentTarget.style.borderStyle = 'dashed';
+              e.currentTarget.style.background = 'transparent';
+            }}
+            title="iCanScan Studio es 100% gratuito. Contribuir de forma voluntaria al proyecto."
+          >
+            <Heart size={14} style={{ color: '#ef4444', opacity: 0.8 }} />
+            <span>Contribuir al proyecto</span>
+          </button>
         </div>
 
         {/* Folder / Sketchbook Tab Navigation */}
@@ -344,31 +382,6 @@ export default function App() {
           >
             <Wrench size={18} />
             Herramientas y Extracción PDF
-          </button>
-
-          <button 
-            onClick={() => showModal({
-              title: 'Apoyar a iCanScan Studio ❤️',
-              message: '¡Gracias por utilizar iCanScan Studio!\n\nEste software es y siempre será una herramienta libre, 100% gratuita, sin anuncios ni suscripciones, diseñada con pasión para tu productividad y privacidad.\n\nSi esta app te ha facilitado el trabajo o ahorrado tiempo valioso, puedes agradecer y apoyar su mantenimiento e innovación continua invitándole un chocolate caliente al creador ☕.',
-              type: 'support'
-            })}
-            className="tab-btn"
-            style={{
-              marginLeft: 'auto',
-              background: '#fffdf5',
-              color: '#854d0e',
-              borderColor: '#f59e0b',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 16px',
-              fontSize: '1rem',
-              boxShadow: '2px -2px 0px 0px #b45309'
-            }}
-            title="iCanScan Studio es y será siempre 100% gratuito. Si deseas apoyar su desarrollo, puedes donar un café :)"
-          >
-            <Heart size={16} style={{ color: '#ef4444', fill: '#ef4444' }} />
-            <span>¿Te gusta? Apóyame ☕</span>
           </button>
         </nav>
       </header>
