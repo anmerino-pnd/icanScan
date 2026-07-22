@@ -20,7 +20,9 @@ export default function PdfCompressorView({ onShowModal }) {
   const [compressing, setCompressing] = useState(false);
   const [globalMode, setGlobalMode] = useState("drive_25mb");
 
-  const API_BASE = "http://localhost:8000";
+  const API_BASE = typeof window !== 'undefined' && window.location.protocol.startsWith('http')
+    ? window.location.origin
+    : "http://127.0.0.1:8000";
 
   const fetchFiles = async () => {
     try {

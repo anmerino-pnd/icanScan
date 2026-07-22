@@ -7,13 +7,33 @@ import img2pdf
 
 logger = logging.getLogger(__name__)
 
+def generate_thumbnail(image_path: str, thumb_path: str, max_dim: int = 400) -> str:
+    """
+    Generates a fast, lightweight thumbnail image for grid display.
+    """
+    if not os.path.exists(image_path):
+        return thumb_path
+    try:
+        with Image.open(image_path) as img:
+            img = img.convert("RGB")
+            w, h = img.size
+            if w > max_dim or h > max_dim:
+                ratio = min(max_dim / w, max_dim / h)
+                new_size = (int(w * ratio), int(h * ratio))
+                img = img.resize(new_size, Image.Resampling.LANCZOS)
+            img.save(thumb_path, format="JPEG", quality=85, optimize=True)
+    except Exception as e:
+        logger.warning(f"Could not generate thumbnail {thumb_path}: {e}")
+    return thumb_path
+
 def apply_adjustments(
     original_path: str,
     output_path: str,
     rotation: int = 0,
     brightness: float = 0.0,
     contrast: float = 0.0,
-    bw_filter: bool = False
+    bw_filter: bool = False,
+    thumb_path: Optional[str] = None
 ) -> str:
     """
     Applies non-destructive visual adjustments to the original scan image
@@ -51,6 +71,10 @@ def apply_adjustments(
         
     # Save processed image with high quality PNG
     img.save(output_path, format="PNG", optimize=False)
+    
+    if thumb_path:
+        generate_thumbnail(output_path, thumb_path)
+        
     return output_path
 
 def export_to_pdf(page_paths: List[str], output_pdf_path: str, quality_mode: str = "lossless", dpis: Optional[List[int]] = None) -> str:
@@ -87,3 +111,4 @@ def export_to_pdf(page_paths: List[str], output_pdf_path: str, quality_mode: str
             f_out.write(img2pdf.convert(jpeg_buffers))
             
     return output_pdf_path
+

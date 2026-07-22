@@ -145,13 +145,18 @@ def trigger_scan(request: ScanRequest):
         page_id = uuid.uuid4().hex[:8]
         orig_filename = f"{page_id}_original.png"
         proc_filename = f"{page_id}_processed.png"
+        thumb_filename = f"{page_id}_thumb.jpg"
         
         orig_path = os.path.join(CACHE_DIR, orig_filename)
         proc_path = os.path.join(CACHE_DIR, proc_filename)
+        thumb_path = os.path.join(CACHE_DIR, thumb_filename)
         
         # Save both original and processed (initially identical)
         img.save(orig_path, format="PNG", optimize=False)
         img.save(proc_path, format="PNG", optimize=False)
+        
+        # Generate fast thumbnail for grid rendering
+        image_processor.generate_thumbnail(proc_path, thumb_path)
         
         file_size_bytes = os.path.getsize(proc_path)
         
@@ -159,6 +164,7 @@ def trigger_scan(request: ScanRequest):
             "id": page_id,
             "original_url": f"/cache/{orig_filename}",
             "preview_url": f"/cache/{proc_filename}?t={int(time.time()*1000)}",
+            "thumbnail_url": f"/cache/{thumb_filename}?t={int(time.time()*1000)}",
             "dpi": request.dpi,
             "width": img.width,
             "height": img.height,
@@ -176,6 +182,7 @@ def trigger_scan(request: ScanRequest):
 def adjust_page(page_id: str, request: AdjustRequest):
     orig_path = os.path.join(CACHE_DIR, f"{page_id}_original.png")
     proc_path = os.path.join(CACHE_DIR, f"{page_id}_processed.png")
+    thumb_path = os.path.join(CACHE_DIR, f"{page_id}_thumb.jpg")
     
     if not os.path.exists(orig_path):
         raise HTTPException(status_code=404, detail="Página original no encontrada en caché")
@@ -187,12 +194,14 @@ def adjust_page(page_id: str, request: AdjustRequest):
             rotation=request.rotation,
             brightness=request.brightness,
             contrast=request.contrast,
-            bw_filter=request.bw_filter
+            bw_filter=request.bw_filter,
+            thumb_path=thumb_path
         )
         file_size_bytes = os.path.getsize(proc_path)
         return {
             "id": page_id,
             "preview_url": f"/cache/{page_id}_processed.png?t={int(time.time()*1000)}",
+            "thumbnail_url": f"/cache/{page_id}_thumb.jpg?t={int(time.time()*1000)}",
             "rotation": request.rotation,
             "brightness": request.brightness,
             "contrast": request.contrast,
@@ -469,6 +478,8 @@ def save_tool_output_to_path(request: ToolSaveToPathRequest):
         rel_path = request.source_url.lstrip("/")
         if rel_path.startswith("cache/tools/"):
             parts = rel_path.split("/")
+            if len(parts) < 4:
+                raise HTTPException(status_code=400, detail="URL de herramientas inválida")
             source_file = os.path.join(pdf_tools._get_tools_cache_dir(), parts[2], parts[3])
         elif rel_path.startswith("cache/compress/") or rel_path.startswith("api/compress/download/"):
             file_id = rel_path.split("/")[-1]
@@ -480,24 +491,47 @@ def save_tool_output_to_path(request: ToolSaveToPathRequest):
         else:
             source_file = os.path.join(os.path.abspath(os.path.dirname(__file__)), "..", "..", rel_path)
             
-        if not source_file or not os.path.exists(source_file):
-            raise HTTPException(status_code=404, detail="El archivo generado no se encontró en el servidor")
+        if not source_file:
+            raise HTTPException(status_code=404, detail="El archivo no existe")
+            
+        source_file_abs = os.path.abspath(source_file)
+        tools_dir = os.path.abspath(pdf_tools._get_tools_cache_dir())
+        cache_dir = os.path.abspath(CACHE_DIR)
+        compress_dir = os.path.abspath(COMPRESS_CACHE_DIR)
+        
+        valid_source = False
+        for allowed in [tools_dir, cache_dir, compress_dir]:
+            try:
+                if os.path.commonpath([allowed, source_file_abs]) == allowed:
+                    valid_source = True
+                    break
+            except ValueError:
+                pass
+                
+        if not valid_source or not os.path.exists(source_file_abs):
+            raise HTTPException(status_code=403, detail="Acceso no permitido al archivo solicitado")
             
         target_dir = os.path.dirname(request.target_path)
         if target_dir:
             os.makedirs(target_dir, exist_ok=True)
             
-        shutil.copyfile(source_file, request.target_path)
+        shutil.copyfile(source_file_abs, request.target_path)
         return {"success": True, "saved_path": request.target_path}
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error saving tool output to path: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/tools/download/{task_id}/{filename}")
 def download_tool_file(task_id: str, filename: str):
-    file_path = os.path.join(pdf_tools._get_tools_cache_dir(), task_id, filename)
-    if not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail="Archivo no encontrado en servidor")
+    tools_dir = os.path.abspath(pdf_tools._get_tools_cache_dir())
+    file_path = os.path.abspath(os.path.join(tools_dir, task_id, filename))
+    try:
+        if os.path.commonpath([tools_dir, file_path]) != tools_dir or not os.path.exists(file_path):
+            raise HTTPException(status_code=404, detail="Archivo no encontrado o acceso restringido")
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Ruta inválida")
     return FileResponse(path=file_path, filename=filename)
 
 # Mount built React frontend static distribution if built

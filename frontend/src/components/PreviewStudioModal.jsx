@@ -25,7 +25,9 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
   const [isApplying, setIsApplying] = useState(false);
   const [zoom, setZoom] = useState(1.0);
 
-  const API_BASE = "http://localhost:8000";
+  const API_BASE = typeof window !== 'undefined' && window.location.protocol.startsWith('http')
+    ? window.location.origin
+    : "http://127.0.0.1:8000";
 
   // Sync state whenever page changes via navigation arrows
   useEffect(() => {
@@ -315,7 +317,7 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
 
         {/* 1. Rotation Controls */}
         <div>
-          <label style={{ display: 'block', fontSize: '1.05rem', color: 'var(--text-primary)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600 }}>
+          <label style={{ fontSize: '1.05rem', color: 'var(--text-primary)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600 }}>
             <RotateCw size={18} color="var(--accent-red)" /> {t('studio.rotationLabel')} ({rotation}°)
           </label>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: '10px' }}>

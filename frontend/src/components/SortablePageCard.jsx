@@ -23,7 +23,9 @@ export default function SortablePageCard({ page, index, isSelected, onToggleSele
     zIndex: isDragging ? 999 : 1
   };
 
-  const API_BASE = "http://localhost:8000";
+  const API_BASE = typeof window !== 'undefined' && window.location.protocol.startsWith('http')
+    ? window.location.origin
+    : "http://127.0.0.1:8000";
 
   return (
     <div 
@@ -101,7 +103,7 @@ export default function SortablePageCard({ page, index, isSelected, onToggleSele
         title={t('card.previewTooltip')}
       >
         <img 
-          src={`${API_BASE}${page.preview_url}`} 
+          src={`${API_BASE}${page.thumbnail_url || page.preview_url}`} 
           alt={`Hoja escaneada #${index + 1}`} 
           style={{ 
             maxWidth: '90%', 

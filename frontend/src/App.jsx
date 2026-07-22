@@ -10,7 +10,9 @@ import PdfToolsView from './components/PdfToolsView';
 import { Layers, Archive, Wrench, Heart, Languages } from 'lucide-react';
 import { useLanguage } from './i18n/LanguageContext';
 
-const API_BASE = "http://localhost:8000";
+const API_BASE = typeof window !== 'undefined' && window.location.protocol.startsWith('http')
+  ? window.location.origin
+  : "http://127.0.0.1:8000";
 
 export default function App() {
   const { t, lang, toggleLang } = useLanguage();

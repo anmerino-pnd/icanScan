@@ -97,11 +97,15 @@ def compress_pdf(file_id: str, mode: str = "drive_25mb") -> Dict[str, Any]:
 
         # Step 1: Re-encode heavy raster images inside the document if mode requires or exceeds limit
         if mode in ["extreme", "medium", "drive_25mb"]:
+            processed_xrefs = set()
             for page_num in range(len(doc)):
                 page = doc[page_num]
                 image_list = page.get_images(full=True)
                 for img_info in image_list:
                     xref = img_info[0]
+                    if xref in processed_xrefs:
+                        continue
+                    processed_xrefs.add(xref)
                     try:
                         base_img = doc.extract_image(xref)
                         if not base_img:
@@ -109,26 +113,26 @@ def compress_pdf(file_id: str, mode: str = "drive_25mb") -> Dict[str, Any]:
                         image_bytes = base_img["image"]
                         
                         # Open with PIL
-                        pil_img = Image.open(io.BytesIO(image_bytes))
-                        w, h = pil_img.size
-                        
-                        # Downscale if larger than max_dimension
-                        if w > max_dimension or h > max_dimension:
-                            ratio = min(max_dimension / w, max_dimension / h)
-                            new_w, new_h = int(w * ratio), int(h * ratio)
-                            pil_img = pil_img.resize((new_w, new_h), Image.Resampling.LANCZOS)
-                        
-                        # Convert to RGB if needed and re-encode to JPEG
-                        if pil_img.mode in ("RGBA", "P"):
-                            pil_img = pil_img.convert("RGB")
+                        with Image.open(io.BytesIO(image_bytes)) as pil_img:
+                            w, h = pil_img.size
                             
-                        out_buf = io.BytesIO()
-                        pil_img.save(out_buf, format="JPEG", quality=jpg_quality, optimize=True)
-                        compressed_img_bytes = out_buf.getvalue()
-                        
-                        # Only replace if new bytes are smaller than original bytes
-                        if len(compressed_img_bytes) < len(image_bytes):
-                            page.replace_image(xref, stream=compressed_img_bytes)
+                            # Downscale if larger than max_dimension
+                            if w > max_dimension or h > max_dimension:
+                                ratio = min(max_dimension / w, max_dimension / h)
+                                new_w, new_h = int(w * ratio), int(h * ratio)
+                                pil_img = pil_img.resize((new_w, new_h), Image.Resampling.LANCZOS)
+                            
+                            # Convert to RGB if needed and re-encode to JPEG
+                            if pil_img.mode in ("RGBA", "P"):
+                                pil_img = pil_img.convert("RGB")
+                                
+                            out_buf = io.BytesIO()
+                            pil_img.save(out_buf, format="JPEG", quality=jpg_quality, optimize=True)
+                            compressed_img_bytes = out_buf.getvalue()
+                            
+                            # Only replace if new bytes are smaller than original bytes
+                            if len(compressed_img_bytes) < len(image_bytes):
+                                page.replace_image(xref, stream=compressed_img_bytes)
                     except Exception as img_err:
                         logger.warning(f"Could not recompress image xref {xref} on page {page_num}: {img_err}")
 

@@ -9,7 +9,6 @@ import {
   Image as ImageIcon, 
   Layers, 
   FileText, 
-  ArrowRight, 
   Sparkles, 
   RefreshCcw,
   Plus,
@@ -56,7 +55,9 @@ export default function PdfToolsView({ onShowModal }) {
   // Global Inspection Modal State
   const [inspectingItem, setInspectingItem] = useState(null); // { type: 'image' | 'pdf', url: string, filename: string, title?: string }
 
-  const API_BASE = "http://localhost:8000";
+  const API_BASE = typeof window !== 'undefined' && window.location.protocol.startsWith('http')
+    ? window.location.origin
+    : "http://127.0.0.1:8000";
 
   // --- Helper to fetch PDF total pages info ---
   const fetchPdfInfo = async (path, setInfoFn) => {
