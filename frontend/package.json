@@ -44,9 +44,10 @@
       "shortcutName": "iCanScan Studio"
     },
     "appx": {
-      "identityName": "iCanScanStudio",
-      "publisher": "CN=AngelMerino",
-      "publisherDisplayName": "Angel Merino"
+      "identityName": "AngelMerino.iCanScan",
+      "publisher": "CN=C630BBC2-C1EA-4A24-A731-3F1F0957A9CB",
+      "publisherDisplayName": "Angel Merino",
+      "displayName": "iCanScan"
     }
   },
   "dependencies": {
