@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
 const { spawn, execSync } = require('child_process');
 const http = require('http');
@@ -78,6 +78,15 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true
     }
+  });
+
+  // Intercept new window requests (e.g. PayPal/donation external links) to open in default browser
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (url.startsWith('http:') || url.startsWith('https:')) {
+      shell.openExternal(url);
+      return { action: 'deny' };
+    }
+    return { action: 'allow' };
   });
 
   // Load the FastAPI server root which serves both the API and our built React UI
