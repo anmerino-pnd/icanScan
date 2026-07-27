@@ -26,7 +26,10 @@ export default function App() {
   
   const [pages, setPages] = useState([]);
   const [selectedIds, setSelectedIds] = useState([]);
-  const [inspectingPage, setInspectingPage] = useState(null);
+  const [inspectingPageId, setInspectingPageId] = useState(null);
+
+  const inspectingPage = pages.find(p => p.id === inspectingPageId);
+  const inspectingPageIndex = pages.findIndex(p => p.id === inspectingPageId);
   
   const [isScanning, setIsScanning] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -483,7 +486,7 @@ export default function App() {
                 onDeselectAll={handleDeselectAll}
                 onDeleteSelected={handleDeleteSelected}
                 onDeleteSingle={handleDeleteSingle}
-                onInspect={(page) => setInspectingPage(page)}
+                onInspect={(page) => setInspectingPageId(page.id)}
                 onDragEnd={handleDragEnd}
               />
             </div>
@@ -493,14 +496,14 @@ export default function App() {
               <PreviewStudioModal 
                 key={inspectingPage.id}
                 page={inspectingPage}
-                pageIndex={pages.findIndex(p => p.id === inspectingPage.id)}
+                pageIndex={inspectingPageIndex}
                 totalCount={pages.length}
                 onNavigate={(newIndex) => {
-                  if (newIndex >= 0 && newIndex < pages.length) {
-                    setInspectingPage(pages[newIndex]);
+                  if (newIndex >= 0 && newIndex < pages.length && pages[newIndex]) {
+                    setInspectingPageId(pages[newIndex].id);
                   }
                 }}
-                onClose={() => setInspectingPage(null)}
+                onClose={() => setInspectingPageId(null)}
                 onUpdatePage={handleUpdatePage}
               />
             )}

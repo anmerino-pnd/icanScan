@@ -195,7 +195,9 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
           {/* Floating Left Arrow */}
           {pageIndex > 0 && (
             <button
+              type="button"
               onClick={(e) => {
+                e.preventDefault();
                 e.stopPropagation();
                 if (onNavigate) onNavigate(pageIndex - 1);
               }}
@@ -212,7 +214,7 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
                 alignItems: 'center',
                 justifyContent: 'center',
                 boxShadow: '4px 4px 0px 0px #111111',
-                zIndex: 10,
+                zIndex: 100,
                 background: 'var(--bg-surface)',
                 cursor: 'pointer'
               }}
@@ -225,7 +227,7 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
           {/* Polaroid Container around Image */}
           <div className="paper-card" style={{ padding: '16px', background: '#ffffff', border: '3px solid var(--border-lead)', boxShadow: '10px 10px 0px 0px #111111' }}>
             <img 
-              src={`${API_BASE}${previewUrl || page.preview_url}`} 
+              src={`${API_BASE}${(previewUrl || page.preview_url).includes('?') ? (previewUrl || page.preview_url) : `${(previewUrl || page.preview_url)}?v=${page.id}`}`} 
               alt="Hoja en previsualización" 
               style={{
                 maxHeight: '78vh',
@@ -242,7 +244,9 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
           {/* Floating Right Arrow */}
           {pageIndex < totalCount - 1 && (
             <button
+              type="button"
               onClick={(e) => {
+                e.preventDefault();
                 e.stopPropagation();
                 if (onNavigate) onNavigate(pageIndex + 1);
               }}
@@ -259,7 +263,7 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
                 alignItems: 'center',
                 justifyContent: 'center',
                 boxShadow: '4px 4px 0px 0px #111111',
-                zIndex: 10,
+                zIndex: 100,
                 background: 'var(--bg-surface)',
                 cursor: 'pointer'
               }}
