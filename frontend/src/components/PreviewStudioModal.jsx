@@ -195,7 +195,10 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
           {/* Floating Left Arrow */}
           {pageIndex > 0 && (
             <button
-              onClick={() => onNavigate && onNavigate(pageIndex - 1)}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onNavigate) onNavigate(pageIndex - 1);
+              }}
               className="btn btn-secondary"
               style={{
                 position: 'absolute',
@@ -210,7 +213,8 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
                 justifyContent: 'center',
                 boxShadow: '4px 4px 0px 0px #111111',
                 zIndex: 10,
-                background: 'var(--bg-surface)'
+                background: 'var(--bg-surface)',
+                cursor: 'pointer'
               }}
               title="Anterior (Flecha Izquierda)"
             >
@@ -221,7 +225,7 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
           {/* Polaroid Container around Image */}
           <div className="paper-card" style={{ padding: '16px', background: '#ffffff', border: '3px solid var(--border-lead)', boxShadow: '10px 10px 0px 0px #111111' }}>
             <img 
-              src={`${API_BASE}${page.preview_url || previewUrl}`} 
+              src={`${API_BASE}${previewUrl || page.preview_url}`} 
               alt="Hoja en previsualización" 
               style={{
                 maxHeight: '78vh',
@@ -238,7 +242,10 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
           {/* Floating Right Arrow */}
           {pageIndex < totalCount - 1 && (
             <button
-              onClick={() => onNavigate && onNavigate(pageIndex + 1)}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onNavigate) onNavigate(pageIndex + 1);
+              }}
               className="btn btn-secondary"
               style={{
                 position: 'absolute',
@@ -253,7 +260,8 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
                 justifyContent: 'center',
                 boxShadow: '4px 4px 0px 0px #111111',
                 zIndex: 10,
-                background: 'var(--bg-surface)'
+                background: 'var(--bg-surface)',
+                cursor: 'pointer'
               }}
               title="Siguiente (Flecha Derecha)"
             >

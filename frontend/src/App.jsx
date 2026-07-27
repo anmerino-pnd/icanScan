@@ -491,6 +491,7 @@ export default function App() {
             {/* Preview Studio Modal */}
             {inspectingPage && (
               <PreviewStudioModal 
+                key={inspectingPage.id}
                 page={inspectingPage}
                 pageIndex={pages.findIndex(p => p.id === inspectingPage.id)}
                 totalCount={pages.length}
