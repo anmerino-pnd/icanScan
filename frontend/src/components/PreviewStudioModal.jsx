@@ -133,37 +133,15 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
           boxShadow: '0 4px 0px 0px rgba(0,0,0,0.2)'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            {/* Navigation Arrows Group */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-surface)', padding: '6px', borderRadius: 'var(--wobbly-sm)', border: '2px solid var(--border-lead)', boxShadow: '2px 2px 0px 0px #2d2d2d' }}>
-              <button
-                onClick={() => onNavigate && pageIndex > 0 && onNavigate(pageIndex - 1)}
-                disabled={pageIndex <= 0}
-                className="btn btn-secondary"
-                style={{ padding: '6px 12px', fontSize: '0.95rem' }}
-                title="Hoja Anterior (Flecha Izquierda)"
-              >
-                <ChevronLeft size={18} /> {t('studio.prev')}
-              </button>
-              
-              <span className="stamp-badge" style={{
-                background: 'var(--accent-red)',
-                color: '#ffffff',
-                padding: '4px 14px',
-                fontSize: '1rem'
-              }}>
-                {t('studio.sheetCounter', { current: pageIndex + 1, total: totalCount })}
-              </span>
-
-              <button
-                onClick={() => onNavigate && pageIndex < totalCount - 1 && onNavigate(pageIndex + 1)}
-                disabled={pageIndex >= totalCount - 1}
-                className="btn btn-secondary"
-                style={{ padding: '6px 12px', fontSize: '0.95rem' }}
-                title="Hoja Siguiente (Flecha Derecha)"
-              >
-                {t('studio.next')} <ChevronRight size={18} />
-              </button>
-            </div>
+            {/* Page Counter Badge */}
+            <span className="stamp-badge" style={{
+              background: 'var(--accent-red)',
+              color: '#ffffff',
+              padding: '6px 16px',
+              fontSize: '1.05rem'
+            }}>
+              {t('studio.sheetCounter', { current: pageIndex + 1, total: totalCount })}
+            </span>
 
             <h3 style={{ fontSize: '1.4rem', margin: 0, fontFamily: 'Kalam, cursive' }}>{t('studio.title')}</h3>
             {isApplying && (
@@ -243,7 +221,7 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
           {/* Polaroid Container around Image */}
           <div className="paper-card" style={{ padding: '16px', background: '#ffffff', border: '3px solid var(--border-lead)', boxShadow: '10px 10px 0px 0px #111111' }}>
             <img 
-              src={`${API_BASE}${previewUrl}`} 
+              src={`${API_BASE}${page.preview_url || previewUrl}`} 
               alt="Hoja en previsualización" 
               style={{
                 maxHeight: '78vh',
@@ -311,7 +289,7 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span>{t('studio.cacheWeight')}</span>
-            <strong style={{ color: 'var(--accent-blue)', fontFamily: 'Kalam, cursive' }}>{page.size_kb} KB</strong>
+            <strong style={{ color: 'var(--accent-blue)', fontFamily: 'Kalam, cursive' }}>{((page.size_kb || 0) / 1024).toFixed(2)} MB</strong>
           </div>
         </div>
 

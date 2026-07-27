@@ -12,6 +12,7 @@ import {
   Sliders
 } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
+import SketchSelect from './SketchSelect';
 
 export default function PdfCompressorView({ onShowModal }) {
   const { t } = useLanguage();
@@ -311,14 +312,15 @@ export default function PdfCompressorView({ onShowModal }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <Sliders size={20} color="var(--accent-red)" />
           <span style={{ fontSize: '1.1rem', fontWeight: 700, fontFamily: 'Kalam, cursive' }}>{t('compressor.modeLabel')}:</span>
-          <select 
+          <SketchSelect 
             value={globalMode} 
-            onChange={(e) => setGlobalMode(e.target.value)}
-            style={{ minWidth: '320px' }}
-          >
-            <option value="drive_25mb">{t('compressor.modeDrive')}</option>
-            <option value="extreme">{t('compressor.modeExtreme')}</option>
-          </select>
+            onChange={(val) => setGlobalMode(val)}
+            minWidth="320px"
+            options={[
+              { value: 'drive_25mb', label: t('compressor.modeDrive') },
+              { value: 'extreme', label: t('compressor.modeExtreme') }
+            ]}
+          />
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '26px', fontFamily: 'Patrick Hand, cursive' }}>

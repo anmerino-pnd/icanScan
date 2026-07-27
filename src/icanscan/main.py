@@ -31,6 +31,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.middleware("http")
+async def add_no_cache_header(request, call_next):
+    response = await call_next(request)
+    path = request.url.path
+    if path == "/" or path.endswith(".html") or path.endswith(".js") or path.endswith(".css"):
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+    return response
+
 # Setup local scans cache directory
 CACHE_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), "..", "..", ".scans_cache")
 COMPRESS_CACHE_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), "..", "..", ".compress_cache")
@@ -125,6 +135,20 @@ class MergePdfsRequest(BaseModel):
 
 class PdfInfoRequest(BaseModel):
     pdf_path: str
+
+class ReorderPageItem(BaseModel):
+    original_index: int
+    rotation: int = 0
+
+class ReorderRotatePdfRequest(BaseModel):
+    pdf_path: str
+    page_items: List[ReorderPageItem]
+    output_filename: str = "Documento_Reordenado.pdf"
+
+class FormatConvertRequest(BaseModel):
+    source_path: str
+    conversion_type: str
+    output_filename: Optional[str] = None
 
 @app.get("/api/scanners")
 def get_scanners():
@@ -465,6 +489,67 @@ def merge_multiple_pdfs(request: MergePdfsRequest):
         }
     except Exception as e:
         logger.error(f"Error merging PDFs: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/tools/pdf-thumbnails")
+def get_pdf_thumbnails(request: PdfInfoRequest):
+    try:
+        pages, task_id = pdf_tools.get_pdf_pages_thumbnails(request.pdf_path)
+        return {"success": True, "pages": pages, "task_id": task_id}
+    except Exception as e:
+        logger.error(f"Error generating PDF thumbnails: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/tools/reorder-rotate-pdf")
+def reorder_rotate_pdf_endpoint(request: ReorderRotatePdfRequest):
+    try:
+        items = [{"original_index": item.original_index, "rotation": item.rotation} for item in request.page_items]
+        output_path, url, size_mb, total_pages = pdf_tools.reorder_and_rotate_pdf(
+            pdf_path=request.pdf_path,
+            page_items=items,
+            output_filename=request.output_filename
+        )
+        return {
+            "success": True,
+            "url": url,
+            "size_mb": size_mb,
+            "page_count": total_pages,
+            "filename": os.path.basename(output_path)
+        }
+    except Exception as e:
+        logger.error(f"Error reordering/rotating PDF: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/tools/convert-format")
+def convert_format_endpoint(request: FormatConvertRequest):
+    try:
+        ctype = request.conversion_type
+        spath = request.source_path
+        out_name = request.output_filename or ""
+        
+        if ctype == "pdf_to_word":
+            output_path, url, size_mb = pdf_tools.convert_pdf_to_word(spath, out_name or "Documento.docx")
+        elif ctype == "word_to_pdf":
+            output_path, url, size_mb = pdf_tools.convert_word_to_pdf(spath, out_name or "Documento.pdf")
+        elif ctype == "pdf_to_pptx":
+            output_path, url, size_mb = pdf_tools.convert_pdf_to_pptx(spath, out_name or "Presentacion.pptx")
+        elif ctype == "pptx_to_pdf":
+            output_path, url, size_mb = pdf_tools.convert_pptx_to_pdf(spath, out_name or "Presentacion.pdf")
+        elif ctype == "pdf_to_excel":
+            output_path, url, size_mb = pdf_tools.convert_pdf_to_excel(spath, out_name or "HojaDeCalculo.xlsx")
+        elif ctype == "excel_to_pdf":
+            output_path, url, size_mb = pdf_tools.convert_excel_to_pdf(spath, out_name or "HojaDeCalculo.pdf")
+        else:
+            raise HTTPException(status_code=400, detail=f"Tipo de conversión desconocido: {ctype}")
+            
+        return {
+            "success": True,
+            "url": url,
+            "size_mb": size_mb,
+            "filename": os.path.basename(output_path)
+        }
+    except Exception as e:
+        logger.error(f"Error converting file format: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 class ToolSaveToPathRequest(BaseModel):

@@ -246,14 +246,25 @@ def scan_page(device_id: str, dpi: int = 300, color_mode: str = "Color", paper_s
             except Exception as e:
                 logger.warning(f"WIA driver did not accept direct extent properties ({e}). Will apply exact software bounding box trim.")
 
-        # Configure Color Mode
+        # Configure Color Mode (Try WIA intent property 6149 & WIA datatype property 4103)
         try:
             intent_val = WIA_INTENT_IMAGE_TYPE_COLOR
+            datatype_val = 0
             if color_mode in ["Grayscale", "Escala de Grises"]:
                 intent_val = WIA_INTENT_IMAGE_TYPE_GRAYSCALE
+                datatype_val = 1
             elif color_mode in ["B&W", "Blanco y Negro"]:
                 intent_val = WIA_INTENT_IMAGE_TYPE_TEXT
-            item.Properties(WIA_IPS_CUR_INTENT).Value = intent_val
+                datatype_val = 2
+            
+            try:
+                item.Properties(WIA_IPS_CUR_INTENT).Value = intent_val
+            except Exception:
+                pass
+            try:
+                item.Properties(4103).Value = datatype_val # WIA_IPA_DATATYPE
+            except Exception:
+                pass
         except Exception as e:
             logger.warning(f"Could not set Color Intent on WIA scanner: {e}")
             
@@ -270,6 +281,14 @@ def scan_page(device_id: str, dpi: int = 300, color_mode: str = "Color", paper_s
                 logger.info(f"Trimming hardware scan ({img.width}x{img.height}) to exact {paper_size} dimensions ({target_w}x{target_h})...")
                 img = img.crop((0, 0, min(img.width, target_w), min(img.height, target_h)))
                 
+        # Enforce PIL Software Color Mode Fallback (Guarantees Grayscale & B&W even if WIA COM properties fail)
+        if color_mode in ["Grayscale", "Escala de Grises"]:
+            img = img.convert("L").convert("RGB")
+        elif color_mode in ["B&W", "Blanco y Negro"]:
+            gray = img.convert("L")
+            # Threshold binarization for crisp high-contrast document text
+            img = gray.point(lambda p: 255 if p > 128 else 0).convert("RGB")
+
         return img
     except Exception as e:
         logger.error(f"Hardware WIA scan failed for {device_id}: {e}. Falling back to high-res simulation capture.")

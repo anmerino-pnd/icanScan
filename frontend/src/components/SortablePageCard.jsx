@@ -27,6 +27,8 @@ export default function SortablePageCard({ page, index, isSelected, onToggleSele
     ? window.location.origin
     : "http://127.0.0.1:8000";
 
+  const sizeMb = ((page.size_kb || 0) / 1024).toFixed(2);
+
   return (
     <div 
       ref={setNodeRef} 
@@ -34,21 +36,24 @@ export default function SortablePageCard({ page, index, isSelected, onToggleSele
         ...style,
         display: 'flex',
         flexDirection: 'column',
-        overflow: 'visible',
-        transform: `${style.transform ? style.transform : ''} rotate(${index % 2 === 0 ? '-1deg' : '1deg'})`
+        background: isSelected ? 'var(--bg-postit)' : '#ffffff',
+        border: '2.5px solid var(--border-lead)',
+        borderRadius: '10px',
+        boxShadow: isSelected ? '5px 5px 0px 0px var(--accent-red)' : '4px 4px 0px 0px #2d2d2d',
+        overflow: 'hidden',
+        boxSizing: 'border-box',
+        transition: 'transform 0.15s ease, box-shadow 0.15s ease'
       }} 
-      className={isSelected ? 'postit-card' : 'paper-card'}
     >
-      {/* Tape Decoration at Top Center */}
-      <div className="tape-decoration" />
-
-      {/* Top Header Row: Drag Handle + Page Number Badge + Checkbox */}
+      {/* Dedicated Header Bar: Drag Handle + Page Badge + Checkbox */}
       <div style={{ 
         display: 'flex', 
         alignItems: 'center', 
         justifyContent: 'space-between', 
-        padding: '12px 14px 8px 14px', 
-        borderBottom: '2px dashed var(--border-lead)'
+        padding: '10px 14px', 
+        background: '#fbf9f5',
+        borderBottom: '2px solid var(--border-lead)',
+        flexShrink: 0
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <button 
@@ -61,14 +66,15 @@ export default function SortablePageCard({ page, index, isSelected, onToggleSele
               cursor: 'grab', 
               padding: '2px', 
               display: 'flex', 
-              alignItems: 'center' 
+              alignItems: 'center',
+              justifyContent: 'center' 
             }}
             title={t('card.dragTooltip')}
           >
-            <GripVertical size={20} />
+            <span className="icon-centered"><GripVertical size={20} /></span>
           </button>
           <span className="stamp-badge" style={{ 
-            background: isSelected ? 'var(--text-primary)' : 'var(--accent-red)', 
+            background: isSelected ? 'var(--accent-red)' : '#2d2d2d', 
             color: '#ffffff', 
             padding: '2px 10px', 
             fontSize: '0.9rem' 
@@ -86,19 +92,20 @@ export default function SortablePageCard({ page, index, isSelected, onToggleSele
         </div>
       </div>
 
-      {/* Thumbnail Preview Area */}
+      {/* Thumbnail Preview Area - Rectangular Portrait Sheet Frame */}
       <div 
         onClick={() => onInspect(page)}
         style={{ 
-          height: '240px', 
-          background: '#f4f1ea', 
+          height: '290px', 
+          background: '#f4efea', 
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: 'center', 
           cursor: 'pointer',
           position: 'relative',
           overflow: 'hidden',
-          borderBottom: '2px solid var(--border-lead)'
+          padding: '14px',
+          boxSizing: 'border-box'
         }}
         title={t('card.previewTooltip')}
       >
@@ -106,23 +113,25 @@ export default function SortablePageCard({ page, index, isSelected, onToggleSele
           src={`${API_BASE}${page.thumbnail_url || page.preview_url}`} 
           alt={`Hoja escaneada #${index + 1}`} 
           style={{ 
-            maxWidth: '90%', 
-            maxHeight: '90%', 
+            maxWidth: '100%', 
+            maxHeight: '100%', 
             objectFit: 'contain', 
-            boxShadow: '3px 3px 0px 0px rgba(0,0,0,0.3)',
-            border: '1px solid var(--border-lead)',
+            boxShadow: '0 4px 10px rgba(0, 0, 0, 0.18)',
+            border: '2px solid var(--border-lead)',
             background: '#ffffff',
-            transition: 'transform 0.15s ease'
+            display: 'block',
+            margin: 'auto'
           }} 
         />
+
         <div style={{
           position: 'absolute',
-          bottom: '8px',
-          right: '8px',
-          background: 'var(--bg-surface)',
+          bottom: '10px',
+          right: '10px',
+          background: '#ffffff',
           border: '2px solid var(--border-lead)',
           padding: '2px 8px',
-          borderRadius: 'var(--wobbly-sm)',
+          borderRadius: '6px',
           fontSize: '0.8rem',
           fontFamily: 'Kalam, cursive',
           fontWeight: 700,
@@ -132,12 +141,12 @@ export default function SortablePageCard({ page, index, isSelected, onToggleSele
           alignItems: 'center',
           gap: '4px'
         }}>
-          <Eye size={14} color="var(--accent-blue)" />
+          <span className="icon-centered"><Eye size={14} color="var(--accent-blue)" /></span>
           {page.dpi} DPI
         </div>
       </div>
 
-      {/* Bottom Footer Info + Quick Actions */}
+      {/* Dedicated Footer Info Bar: Dimensions, MB Weight & Actions */}
       <div style={{ 
         display: 'flex', 
         alignItems: 'center', 
@@ -145,20 +154,23 @@ export default function SortablePageCard({ page, index, isSelected, onToggleSele
         padding: '10px 14px', 
         fontSize: '1rem',
         fontFamily: 'Patrick Hand, cursive',
-        color: 'var(--text-secondary)'
+        color: 'var(--text-secondary)',
+        background: '#ffffff',
+        borderTop: '2px solid var(--border-lead)',
+        flexShrink: 0
       }}>
         <div>
           <span>{page.width}×{page.height} px</span>
-          <span style={{ marginLeft: '6px', fontWeight: 600, color: 'var(--accent-blue)' }}>({page.size_kb} KB)</span>
+          <span style={{ marginLeft: '6px', fontWeight: 600, color: 'var(--accent-blue)' }}>({sizeMb} MB)</span>
         </div>
 
         <button 
           onClick={(e) => { e.stopPropagation(); onDelete(page.id); }} 
           className="btn btn-secondary" 
-          style={{ padding: '6px 10px', fontSize: '0.85rem' }}
+          style={{ padding: '6px 10px', fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
           title={t('card.deleteTooltip')}
         >
-          <Trash2 size={16} color="var(--accent-red)" />
+          <span className="icon-centered"><Trash2 size={16} color="var(--accent-red)" /></span>
         </button>
       </div>
     </div>

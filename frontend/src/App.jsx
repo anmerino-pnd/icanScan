@@ -32,6 +32,18 @@ export default function App() {
   const [isExporting, setIsExporting] = useState(false);
   const [exportQuality, setExportQuality] = useState('lossless');
 
+  const [isWideScreen, setIsWideScreen] = useState(
+    typeof window !== 'undefined' ? window.innerWidth >= 900 : true
+  );
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsWideScreen(window.innerWidth >= 900);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // Top navigation tabs
   const [activeTab, setActiveTab] = useState('studio'); // 'studio' | 'compressor'
 
@@ -55,12 +67,19 @@ export default function App() {
       if (res.ok) {
         const data = await res.json();
         const devices = data.scanners || [];
-        setScanners([
-          ...devices.map(d => ({ ...d, type: 'hardware' })),
-          { id: 'virtual-scanner-sim', name: 'Escáner Virtual Simulación (300 DPI - Alta Fidelidad)', type: 'virtual' }
-        ]);
-        if (devices.length > 0 && selectedDevice === 'virtual-scanner-sim') {
-          setSelectedDevice(devices[0].id);
+        const uniqueMap = new Map();
+        devices.forEach(d => uniqueMap.set(d.id, d));
+        if (!uniqueMap.has('virtual-scanner-sim')) {
+          uniqueMap.set('virtual-scanner-sim', { 
+            id: 'virtual-scanner-sim', 
+            name: 'Escáner Virtual Simulación (300 DPI - Alta Fidelidad)', 
+            type: 'virtual' 
+          });
+        }
+        const uniqueScanners = Array.from(uniqueMap.values());
+        setScanners(uniqueScanners);
+        if (uniqueScanners.length > 0 && selectedDevice === 'virtual-scanner-sim') {
+          setSelectedDevice(uniqueScanners[0].id);
         }
       }
     } catch (err) {
@@ -399,27 +418,30 @@ export default function App() {
         </div>
 
         {/* Folder / Sketchbook Tab Navigation */}
-        <nav style={{ display: 'flex', flexWrap: 'wrap' }}>
+        <nav className="tab-nav-container">
           <button 
             onClick={() => setActiveTab('studio')}
             className={`tab-btn ${activeTab === 'studio' ? 'active' : ''}`}
+            title={t('app.nav.studio')}
           >
-            <Layers size={18} />
-            {t('app.nav.studio')}
+            <div className="tab-icon-wrapper"><Layers size={18} /></div>
+            <span className="tab-label">{t('app.nav.studio')}</span>
           </button>
           <button 
             onClick={() => setActiveTab('compressor')}
             className={`tab-btn ${activeTab === 'compressor' ? 'active' : ''}`}
+            title={t('app.nav.compressor')}
           >
-            <Archive size={18} />
-            {t('app.nav.compressor')}
+            <div className="tab-icon-wrapper"><Archive size={18} /></div>
+            <span className="tab-label">{t('app.nav.compressor')}</span>
           </button>
           <button 
             onClick={() => setActiveTab('tools')}
             className={`tab-btn ${activeTab === 'tools' ? 'active' : ''}`}
+            title={t('app.nav.tools')}
           >
-            <Wrench size={18} />
-            {t('app.nav.tools')}
+            <div className="tab-icon-wrapper"><Wrench size={18} /></div>
+            <span className="tab-label">{t('app.nav.tools')}</span>
           </button>
         </nav>
       </header>
@@ -428,7 +450,7 @@ export default function App() {
       <div className="studio-layout">
         {activeTab === 'studio' && (
           <>
-            {/* Left Sidebar - Scanner Parameters */}
+            {/* Left Sidebar - Scanner Parameters, Report & Export PDF CTA */}
             <ScannerControls 
               scanners={scanners}
               selectedDevice={selectedDevice}
@@ -442,20 +464,29 @@ export default function App() {
               onScan={handleScan}
               isScanning={isScanning}
               onRefreshScanners={fetchScanners}
-            />
-
-            {/* Main Workspace Grid - Pick and Drop */}
-            <PageGrid 
               pages={pages}
               selectedIds={selectedIds}
-              onToggleSelect={handleToggleSelect}
-              onSelectAll={handleSelectAll}
-              onDeselectAll={handleDeselectAll}
-              onDeleteSelected={handleDeleteSelected}
-              onDeleteSingle={handleDeleteSingle}
-              onInspect={(page) => setInspectingPage(page)}
-              onDragEnd={handleDragEnd}
+              exportQuality={exportQuality}
+              setExportQuality={setExportQuality}
+              onClearSession={handleClearSession}
+              onExport={handleExportPdf}
+              isExporting={isExporting}
             />
+
+            {/* Workspace Column (100% Exclusively Dedicated to Page Thumbnails Grid) */}
+            <div className="workspace-column">
+              <PageGrid 
+                pages={pages}
+                selectedIds={selectedIds}
+                onToggleSelect={handleToggleSelect}
+                onSelectAll={handleSelectAll}
+                onDeselectAll={handleDeselectAll}
+                onDeleteSelected={handleDeleteSelected}
+                onDeleteSingle={handleDeleteSingle}
+                onInspect={(page) => setInspectingPage(page)}
+                onDragEnd={handleDragEnd}
+              />
+            </div>
 
             {/* Preview Studio Modal */}
             {inspectingPage && (
@@ -472,17 +503,6 @@ export default function App() {
                 onUpdatePage={handleUpdatePage}
               />
             )}
-
-            {/* Bottom Export Bar */}
-            <ExportBar 
-              pages={pages}
-              selectedIds={selectedIds}
-              exportQuality={exportQuality}
-              setExportQuality={setExportQuality}
-              onExport={handleExportPdf}
-              isExporting={isExporting}
-              onClearSession={handleClearSession}
-            />
           </>
         )}
         {activeTab === 'compressor' && <PdfCompressorView onShowModal={showModal} />}

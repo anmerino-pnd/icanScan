@@ -55,3 +55,8 @@ Thumbs.db
 dist-backend/
 frontend/dist/
 frontend/dist-app/
+
+# Medium Drafts & Articles
+MEDIUM_ARTICLE.md
+medium/
+*.medium

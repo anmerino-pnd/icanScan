@@ -89,6 +89,9 @@ function createWindow() {
     return { action: 'allow' };
   });
 
+  // Clear session cache to ensure fresh static UI bundle loading
+  mainWindow.webContents.session.clearCache().catch(() => {});
+
   // Load the FastAPI server root which serves both the API and our built React UI
   mainWindow.loadURL('http://127.0.0.1:8000');
 

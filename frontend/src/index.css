@@ -39,6 +39,14 @@
   padding: 0;
 }
 
+html, body, #root, .app-container {
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
 body {
   font-family: 'Patrick Hand', -apple-system, BlinkMacSystemFont, cursive, sans-serif;
   background-color: var(--bg-paper);
@@ -46,8 +54,7 @@ body {
   background-size: 24px 24px;
   color: var(--text-primary);
   line-height: 1.5;
-  font-size: 1.1rem;
-  overflow-x: hidden;
+  font-size: 1.25rem;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -103,9 +110,9 @@ h1, h2, h3, h4, h5, h6 {
   background: var(--bg-postit);
   border: 2px solid var(--border-lead);
   border-radius: var(--wobbly-sm);
-  box-shadow: var(--shadow-md);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: var(--shadow-postit);
   position: relative;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 /* Decorative Tape & Tacks */
@@ -117,24 +124,28 @@ h1, h2, h3, h4, h5, h6 {
   width: 90px;
   height: 24px;
   background: var(--border-tape);
-  border: 1px dashed rgba(45, 45, 45, 0.4);
+  border: 1px dashed rgba(0,0,0,0.2);
   z-index: 10;
   pointer-events: none;
 }
 
 .tack-decoration {
-  position: absolute;
-  top: -10px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 18px;
-  height: 18px;
-  background: var(--accent-red);
-  border: 2px solid var(--border-lead);
-  border-radius: 50%;
-  box-shadow: 1px 2px 0px 0px #2d2d2d;
-  z-index: 10;
-  pointer-events: none;
+  display: none !important;
+}
+
+/* Geometrically Centered Icon Helper */
+.icon-centered {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0;
+  vertical-align: middle;
+  line-height: 0 !important;
+}
+.icon-centered svg, svg.icon-geo-centered {
+  display: block !important;
+  margin: 0 !important;
+  overflow: visible;
 }
 
 /* Tactile Hand-Drawn Buttons */
@@ -145,7 +156,7 @@ h1, h2, h3, h4, h5, h6 {
   gap: 8px;
   padding: 10px 20px;
   font-family: 'Patrick Hand', cursive, sans-serif;
-  font-size: 1.15rem;
+  font-size: 1.25rem;
   font-weight: 400;
   border-radius: var(--wobbly-sm);
   border: 3px solid var(--border-lead);
@@ -178,7 +189,7 @@ h1, h2, h3, h4, h5, h6 {
 .btn-secondary {
   background: var(--bg-muted);
   color: var(--text-primary);
-  border-width: 2px;
+  border-width: 2.5px;
   box-shadow: var(--shadow-sm);
 }
 
@@ -271,31 +282,103 @@ input[type=range]::-webkit-slider-thumb:hover {
   background: var(--bg-postit);
 }
 
-/* Custom Checkboxes, Selects & Inputs */
-select {
+/* Custom Checkboxes, Hand-Drawn Select Rectangles & Inputs */
+select, .sketch-select {
   appearance: none;
   -webkit-appearance: none;
-  background-color: var(--bg-surface);
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232d2d2d' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-  background-repeat: no-repeat;
-  background-position: right 14px center;
-  background-size: 16px;
-  color: var(--text-primary);
-  border: 2px solid var(--border-lead);
-  border-radius: var(--wobbly-sm);
-  padding: 10px 38px 10px 14px;
-  font-family: 'Patrick Hand', cursive, sans-serif;
-  font-size: 1.1rem;
-  box-shadow: 2px 2px 0px 0px #2d2d2d;
+  background-color: #ffffff !important;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232d2d2d' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 14px center !important;
+  background-size: 18px !important;
+  color: var(--text-primary) !important;
+  border: 2.5px solid var(--border-lead) !important;
+  border-radius: var(--wobbly-sm) !important;
+  padding: 10px 42px 10px 14px !important;
+  font-family: 'Patrick Hand', cursive, sans-serif !important;
+  font-size: 1.15rem !important;
+  font-weight: 600 !important;
+  box-shadow: 3px 3px 0px 0px #2d2d2d !important;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+select:hover, .sketch-select:hover {
+  background-color: var(--bg-postit) !important;
+  box-shadow: 4px 4px 0px 0px #2d2d2d !important;
+  transform: translateY(-1px);
 }
 
 select option {
-  background: var(--bg-surface);
+  background: #ffffff;
   color: var(--text-primary);
   font-family: 'Patrick Hand', cursive, sans-serif;
   padding: 8px;
+}
+
+/* Custom Interactive SketchSelect Component Styles */
+.sketch-select-box {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background-color: #ffffff !important;
+  color: var(--text-primary) !important;
+  border: 2.5px solid var(--border-lead) !important;
+  border-radius: var(--wobbly-sm) !important;
+  font-family: 'Patrick Hand', cursive, sans-serif !important;
+  font-size: 1.15rem !important;
+  font-weight: 600 !important;
+  box-shadow: 3px 3px 0px 0px #2d2d2d !important;
+  cursor: pointer;
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  user-select: none;
+  box-sizing: border-box;
+}
+
+.sketch-select-box:hover {
+  background-color: var(--bg-postit) !important;
+  box-shadow: 4px 4px 0px 0px #2d2d2d !important;
+  transform: translateY(-1px);
+}
+
+.sketch-select-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 99999;
+  background: #ffffff;
+  border: 2.5px solid var(--border-lead);
+  border-radius: var(--wobbly-sm);
+  box-shadow: 5px 5px 0px 0px #2d2d2d;
+  padding: 6px;
+  max-height: 240px;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.sketch-select-option {
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-family: 'Patrick Hand', cursive, sans-serif;
+  font-size: 1.1rem;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background 0.1s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sketch-select-option.active {
+  background: transparent;
+  font-weight: 700;
+}
+
+.sketch-select-option:hover {
+  background: #f4f1ea;
 }
 
 input[type="text"], input[type="number"] {
@@ -346,39 +429,80 @@ select:focus, input[type="text"]:focus, input[type="number"]:focus {
 }
 
 /* Tab Navigation Buttons - Folder/Sketchbook Tab Style */
+.tab-nav-container {
+  display: flex;
+  align-items: flex-end;
+  margin-bottom: -3px;
+  position: relative;
+  z-index: 10;
+}
+
 .tab-btn {
   background: var(--bg-muted);
   color: var(--text-secondary);
-  border: 2px solid var(--border-lead);
+  border: 2.5px solid var(--border-lead);
   border-bottom: none;
-  border-radius: 12px 12px 0 0;
+  border-radius: 14px 14px 0 0;
   padding: 10px 22px;
   font-family: 'Kalam', cursive, sans-serif;
   font-size: 1.1rem;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.15s ease;
-  display: flex;
+  display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-  margin-right: 6px;
+  margin-right: -6px;
   box-shadow: 2px -2px 0px 0px #2d2d2d;
   transform: translateY(2px);
+  position: relative;
+  z-index: 1;
+}
+
+.tab-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tab-label {
+  white-space: nowrap;
 }
 
 .tab-btn:hover {
   color: var(--text-primary);
   background: #f0ebe2;
   transform: translateY(0);
+  z-index: 4;
 }
 
 .tab-btn.active {
   color: var(--text-primary);
   background: var(--bg-surface);
-  border-bottom: 3px solid var(--bg-surface);
+  border-bottom: 4px solid var(--bg-surface);
   box-shadow: 3px -3px 0px 0px #2d2d2d;
   transform: translateY(1px);
   z-index: 5;
+}
+
+/* Responsive Tab Collapse for Compact Screens */
+@media (max-width: 900px) {
+  .tab-btn {
+    padding: 10px 16px;
+    font-size: 1rem;
+    gap: 6px;
+  }
+}
+
+@media (max-width: 768px) {
+  .tab-btn {
+    padding: 10px 14px;
+  }
+  .tab-label {
+    display: none;
+  }
 }
 
 /* Micro-animations */
@@ -389,6 +513,11 @@ select:focus, input[type="text"]:focus, input[type="number"]:focus {
 
 .animate-pulse-bounce {
   animation: pulse-bounce 3s infinite ease-in-out;
+}
+
+.status-dot-idle {
+  animation: none !important;
+  transform: none !important;
 }
 
 @keyframes modal-in {
@@ -417,47 +546,106 @@ select:focus, input[type="text"]:focus, input[type="number"]:focus {
 }
 
 /* =========================================================
-   Responsive Sketchbook Layout System
+   Desktop Application Viewport Layout System (100vh)
    ========================================================= */
+.studio-header {
+  flex-shrink: 0;
+}
+
 .studio-layout {
   flex: 1;
+  min-height: 0;
   display: flex;
   overflow: hidden;
   position: relative;
+  width: 100%;
 }
 
 .scanner-sidebar {
-  width: 340px;
-  padding: 28px 24px 24px 24px;
+  width: 380px;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 22px;
-  flex-shrink: 0;
-  margin: 20px 0 20px 24px;
-  height: calc(100vh - 104px);
-  overflow-y: auto;
+  min-height: 0;
+  margin: 16px 0 16px 20px;
+  padding: 24px 20px 16px 24px;
+  box-sizing: border-box;
 }
 
-.page-grid-area {
+.scanner-sidebar-scrollable {
   flex: 1;
+  min-height: 0;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  padding: 20px 28px 24px 8px;
+  gap: 12px;
+  padding-right: 2px;
+}
+
+.export-clear-btn:hover {
+  background: #fff0f0 !important;
+  color: var(--accent-red) !important;
+  border-color: var(--accent-red) !important;
+}
+
+.workspace-column {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin: 16px 20px 16px 16px;
+}
+
+.page-grid-container, .page-grid-empty-container {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.thumbnails-scroll-area {
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  padding: 4px;
 }
 
 .export-bar {
-  position: fixed;
-  bottom: 24px;
-  left: 368px;
-  right: 28px;
-  padding: 18px 26px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  z-index: 50;
+  flex-shrink: 0;
+  width: 100%;
+  padding: 12px 20px;
+  margin-top: 10px;
+  position: relative;
+  bottom: auto;
+  left: auto;
+  right: auto;
+  z-index: 10;
   background: var(--bg-postit);
-  box-shadow: 0 -4px 0px 0px #2d2d2d, 6px -6px 0px 0px #2d2d2d;
+  box-shadow: 0 -4px 0px 0px #2d2d2d, 4px 4px 0px 0px #2d2d2d;
+  box-sizing: border-box;
+}
+
+@media (max-height: 900px) {
+  .scanner-sidebar {
+    margin: 10px 0 10px 14px;
+    padding: 14px 12px;
+  }
+  .workspace-column {
+    margin: 10px 14px 10px 12px;
+  }
+  .export-bar {
+    padding: 8px 14px;
+    margin-top: 8px;
+  }
+}
+
+@media (max-width: 1150px) {
+  .export-bar-divider {
+    display: none;
+  }
 }
 
 .studio-modal-container {
