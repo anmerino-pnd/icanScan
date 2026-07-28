@@ -174,9 +174,6 @@ export default function App() {
   // Update single page attributes in state (after live adjustments in modal)
   const handleUpdatePage = (id, updates) => {
     setPages(prev => prev.map(p => (p.id === id ? { ...p, ...updates } : p)));
-    if (inspectingPage?.id === id) {
-      setInspectingPage(prev => ({ ...prev, ...updates }));
-    }
   };
 
   // Export PDF with exact page order or selected pages
@@ -493,8 +490,7 @@ export default function App() {
 
             {/* Preview Studio Modal */}
             {inspectingPage && (
-              <PreviewStudioModal 
-                key={inspectingPage.id}
+              <PreviewStudioModal
                 page={inspectingPage}
                 pageIndex={inspectingPageIndex}
                 totalCount={pages.length}

@@ -120,7 +120,9 @@ export default function SortablePageCard({ page, index, isSelected, onToggleSele
             border: '2px solid var(--border-lead)',
             background: '#ffffff',
             display: 'block',
-            margin: 'auto'
+            margin: 'auto',
+            transform: page.rotation ? `rotate(${page.rotation}deg)` : 'none',
+            transition: 'transform 0.15s ease'
           }} 
         />
 
