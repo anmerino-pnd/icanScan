@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   RotateCw, 
   Sun, 
@@ -25,6 +25,10 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
   const [isApplying, setIsApplying] = useState(false);
   const [zoom, setZoom] = useState(1.0);
 
+  // Sequence guard: tracks the latest request to discard stale responses (H7/Priority 4)
+  const requestSeqRef = useRef(0);
+  const abortControllerRef = useRef(null);
+
   const API_BASE = typeof window !== 'undefined' && window.location.protocol.startsWith('http')
     ? window.location.origin
     : "http://127.0.0.1:8000";
@@ -37,6 +41,13 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
     setBwFilter(page.bw_filter || false);
     setPreviewUrl(page.preview_url);
     setZoom(1.0);
+    setIsApplying(false);
+
+    // Abort any in-flight /adjust request from the previous page (Priority 4 / H6)
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
   }, [page.id]);
 
   // Keyboard navigation shortcuts
@@ -55,73 +66,112 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [pageIndex, totalCount, onNavigate, onClose]);
 
-  // Background / debounced API call (600ms) to sync high-res disk image after slider settles
-  useEffect(() => {
-    if (
-      rotation === (page.rotation || 0) &&
-      brightness === (page.brightness || 0.0) &&
-      contrast === (page.contrast || 0.0) &&
-      bwFilter === (page.bw_filter || false) &&
-      previewUrl === page.preview_url
-    ) {
-      return;
-    }
-
-    const timer = setTimeout(async () => {
-      setIsApplying(true);
-      try {
-        const response = await fetch(`${API_BASE}/api/pages/${page.id}/adjust`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            rotation,
-            brightness,
-            contrast,
-            bw_filter: bwFilter
-          })
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setPreviewUrl(data.preview_url);
-          onUpdatePage(page.id, {
-            preview_url: data.preview_url,
-            rotation: data.rotation,
-            brightness: data.brightness,
-            contrast: data.contrast,
-            bw_filter: data.bw_filter,
-            size_kb: data.size_kb
-          });
-        }
-      } catch (err) {
-        console.error("Error applying adjustment to disk:", err);
-      } finally {
-        setIsApplying(false);
-      }
-    }, 600); // 600ms debounce ensures zero network interruption while actively sliding
-
-    return () => clearTimeout(timer);
-  }, [rotation, brightness, contrast, bwFilter, page.id]);
+  // Priority 1: NO debounce useEffect — backend is called ONLY on "Confirm & Save"
 
   const handleRotate = (deg) => {
     setRotation((prev) => (prev + deg) % 360);
   };
 
   const handleReset = () => {
-    setRotation(0);
-    setBrightness(0.0);
-    setContrast(0.0);
-    setBwFilter(false);
+    setRotation(page.rotation || 0);
+    setBrightness(page.brightness || 0.0);
+    setContrast(page.contrast || 0.0);
+    setBwFilter(page.bw_filter || false);
   };
 
-  // Instantaneous GPU CSS Filters & Transforms (0ms Latency / 60 FPS)
-  // While sliding, the user gets immediate visual feedback right in the browser viewport
-  const cssFilter = `brightness(${100 + brightness}%) contrast(${100 + contrast}%) ${bwFilter ? 'grayscale(100%) contrast(220%)' : ''}`;
-  const cssTransform = `scale(${zoom}) rotate(${rotation}deg)`;
+  // Priority 1: "Confirm & Save Sheet" — bakes adjustments via backend, then closes
+  const handleConfirmSave = async () => {
+    // Check if any adjustments differ from what's already baked in the page
+    const hasChanges =
+      rotation !== (page.rotation || 0) ||
+      brightness !== (page.brightness || 0.0) ||
+      contrast !== (page.contrast || 0.0) ||
+      bwFilter !== (page.bw_filter || false);
+
+    if (!hasChanges) {
+      // No changes — just close
+      onClose();
+      return;
+    }
+
+    // Abort any previous in-flight request (Priority 4)
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    const thisSeq = ++requestSeqRef.current;
+
+    setIsApplying(true);
+    try {
+      const response = await fetch(`${API_BASE}/api/pages/${page.id}/adjust`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rotation,
+          brightness,
+          contrast,
+          bw_filter: bwFilter
+        }),
+        signal: controller.signal
+      });
+
+      // Priority 4: Discard stale response if a newer request was sent
+      if (thisSeq !== requestSeqRef.current) return;
+
+      if (response.ok) {
+        const data = await response.json();
+        // Priority 3: Propagate thumbnail_url to workspace thumbnails (H3)
+        onUpdatePage(page.id, {
+          preview_url: data.preview_url,
+          thumbnail_url: data.thumbnail_url,
+          rotation: data.rotation,
+          brightness: data.brightness,
+          contrast: data.contrast,
+          bw_filter: data.bw_filter,
+          size_kb: data.size_kb
+        });
+        // Close modal after successful save
+        onClose();
+      }
+    } catch (err) {
+      if (err.name === 'AbortError') return; // Request was intentionally cancelled
+      console.error("Error applying adjustment to disk:", err);
+    } finally {
+      if (thisSeq === requestSeqRef.current) {
+        setIsApplying(false);
+      }
+    }
+  };
+
+  // Priority 1: CSS-only preview — rotation/filter applied ONLY via GPU CSS transforms
+  // The base image (previewUrl) is the ORIGINAL unmodified image from the backend.
+  // CSS transforms are layered on top for instant, zero-latency visual feedback.
+  // The "delta" between what's already baked in the page and the current local state
+  // determines the CSS transform to apply on top of the already-baked image.
+  const bakedRotation = page.rotation || 0;
+  const deltaRotation = rotation - bakedRotation;
+  const bakedBrightness = page.brightness || 0.0;
+  const deltaBrightness = brightness - bakedBrightness;
+  const bakedContrast = page.contrast || 0.0;
+  const deltaContrast = contrast - bakedContrast;
+  const bakedBw = page.bw_filter || false;
+
+  // Build CSS filter: apply only the DELTA on top of what's already in the image pixels
+  const cssFilterParts = [];
+  cssFilterParts.push(`brightness(${100 + deltaBrightness}%)`);
+  cssFilterParts.push(`contrast(${100 + deltaContrast}%)`);
+  // B&W: if the baked image already has B&W, only apply CSS grayscale if toggling it ON from a non-B&W image
+  if (bwFilter && !bakedBw) {
+    cssFilterParts.push('grayscale(100%) contrast(220%)');
+  }
+  const cssFilter = cssFilterParts.join(' ');
+  const cssTransform = `scale(${zoom}) rotate(${deltaRotation}deg)`;
 
   return (
     <div className="studio-modal-container">
       {/* Center Main Viewport */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', minWidth: 0 }}>
         {/* Top Header Bar */}
         <div style={{
           display: 'flex',
@@ -130,7 +180,8 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
           padding: '16px 28px',
           background: 'var(--bg-paper)',
           borderBottom: '3px solid var(--border-lead)',
-          boxShadow: '0 4px 0px 0px rgba(0,0,0,0.2)'
+          boxShadow: '0 4px 0px 0px rgba(0,0,0,0.2)',
+          flexShrink: 0
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             {/* Page Counter Badge */}
@@ -181,16 +232,9 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
           </div>
         </div>
 
-        {/* Canvas Image Area - Drafting Table */}
-        <div style={{
-          flex: 1,
-          overflow: 'auto',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '40px',
-          background: 'radial-gradient(circle at center, #3d3d3d 0%, #1e1e1e 100%)',
-          position: 'relative'
+        {/* Priority 6: Canvas Image Area — fixed-size container, image scales inside */}
+        <div className="studio-canvas-area" style={{
+          background: 'radial-gradient(circle at center, #3d3d3d 0%, #1e1e1e 100%)'
         }}>
           {/* Floating Left Arrow */}
           {pageIndex > 0 && (
@@ -225,17 +269,18 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
           )}
 
           {/* Polaroid Container around Image */}
-          <div className="paper-card" style={{ padding: '16px', background: '#ffffff', border: '3px solid var(--border-lead)', boxShadow: '10px 10px 0px 0px #111111' }}>
+          <div className="paper-card" style={{ padding: '16px', background: '#ffffff', border: '3px solid var(--border-lead)', boxShadow: '10px 10px 0px 0px #111111', maxWidth: '80%', maxHeight: '90%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <img 
               src={`${API_BASE}${(previewUrl || page.preview_url).includes('?') ? (previewUrl || page.preview_url) : `${(previewUrl || page.preview_url)}?v=${page.id}`}`} 
               alt="Hoja en previsualización" 
               style={{
-                maxHeight: '78vh',
-                maxWidth: '75vw',
+                maxHeight: '100%',
+                maxWidth: '100%',
+                objectFit: 'contain',
                 filter: cssFilter,
                 transform: cssTransform,
                 transformOrigin: 'center center',
-                transition: isApplying ? 'none' : 'transform 0.15s ease, filter 0.05s ease',
+                transition: 'transform 0.15s ease, filter 0.05s ease',
                 display: 'block'
               }}
             />
@@ -375,9 +420,17 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
 
         {/* Bottom Action Bar */}
         <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <button onClick={onClose} className="btn btn-primary" style={{ width: '100%', padding: '14px', background: 'var(--accent-red)', color: '#ffffff', fontFamily: 'Kalam, cursive', fontSize: '1.25rem', fontWeight: 700, boxShadow: '4px 4px 0px 0px #2d2d2d' }}>
-            <Check size={22} />
-            {t('studio.confirmSave')}
+          <button
+            onClick={handleConfirmSave}
+            disabled={isApplying}
+            className="btn btn-primary"
+            style={{ width: '100%', padding: '14px', background: 'var(--accent-red)', color: '#ffffff', fontFamily: 'Kalam, cursive', fontSize: '1.25rem', fontWeight: 700, boxShadow: '4px 4px 0px 0px #2d2d2d', opacity: isApplying ? 0.7 : 1 }}
+          >
+            {isApplying ? (
+              <><RefreshCcw size={22} className="animate-spin" /> {t('studio.syncing')}</>
+            ) : (
+              <><Check size={22} /> {t('studio.confirmSave')}</>
+            )}
           </button>
           <button onClick={handleReset} className="btn btn-secondary" style={{ width: '100%', padding: '10px', fontSize: '1rem' }}>
             <RefreshCcw size={16} />

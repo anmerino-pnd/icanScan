@@ -673,6 +673,20 @@ select:focus, input[type="text"]:focus, input[type="number"]:focus {
   gap: 24px;
   background: var(--bg-paper);
   overflow-y: auto;
+  flex-shrink: 0;
+}
+
+/* Priority 6: Fixed-size canvas area — rotation never changes layout */
+.studio-canvas-area {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  position: relative;
+  min-width: 0;
+  min-height: 0;
 }
 
 /* Media Queries for Tablet, Small Desktop & Mobile Screens */

@@ -167,7 +167,7 @@ export default function App() {
     setPages(prev => prev.filter(p => p.id !== id));
     setSelectedIds(prev => prev.filter(item => item !== id));
     if (inspectingPage?.id === id) {
-      setInspectingPage(null);
+      setInspectingPageId(null);
     }
   };
 
@@ -295,7 +295,7 @@ export default function App() {
       onConfirm: async () => {
         setPages([]);
         setSelectedIds([]);
-        setInspectingPage(null);
+        setInspectingPageId(null);
         try {
           await fetch(`${API_BASE}/api/session/clear`, { method: 'POST' });
         } catch (err) {

@@ -7,21 +7,24 @@ import img2pdf
 
 logger = logging.getLogger(__name__)
 
-def generate_thumbnail(image_path: str, thumb_path: str, max_dim: int = 400) -> str:
+def generate_thumbnail(image_path: str, thumb_path: str, max_dim: int = 400, img_obj: Optional[Image.Image] = None) -> str:
     """
     Generates a fast, lightweight thumbnail image for grid display.
+    Accepts an optional in-memory Image object to avoid re-reading from disk.
     """
-    if not os.path.exists(image_path):
-        return thumb_path
     try:
-        with Image.open(image_path) as img:
-            img = img.convert("RGB")
-            w, h = img.size
-            if w > max_dim or h > max_dim:
-                ratio = min(max_dim / w, max_dim / h)
-                new_size = (int(w * ratio), int(h * ratio))
-                img = img.resize(new_size, Image.Resampling.LANCZOS)
-            img.save(thumb_path, format="JPEG", quality=85, optimize=True)
+        if img_obj is not None:
+            img = img_obj.copy().convert("RGB")
+        else:
+            if not os.path.exists(image_path):
+                return thumb_path
+            img = Image.open(image_path).convert("RGB")
+        w, h = img.size
+        if w > max_dim or h > max_dim:
+            ratio = min(max_dim / w, max_dim / h)
+            new_size = (int(w * ratio), int(h * ratio))
+            img = img.resize(new_size, Image.Resampling.LANCZOS)
+        img.save(thumb_path, format="JPEG", quality=85, optimize=True)
     except Exception as e:
         logger.warning(f"Could not generate thumbnail {thumb_path}: {e}")
     return thumb_path
@@ -72,8 +75,9 @@ def apply_adjustments(
     # Save processed image with high quality PNG
     img.save(output_path, format="PNG", optimize=False)
     
+    # Generate thumbnail from in-memory image (avoids redundant disk re-read)
     if thumb_path:
-        generate_thumbnail(output_path, thumb_path)
+        generate_thumbnail(output_path, thumb_path, img_obj=img)
         
     return output_path
 
