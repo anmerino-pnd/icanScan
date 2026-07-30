@@ -272,34 +272,37 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
         }}>
           {/* Floating Left Arrow */}
           {pageIndex > 0 && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (onNavigate) onNavigate(pageIndex - 1);
-              }}
-              className="btn btn-secondary"
-              style={{
-                position: 'absolute',
-                left: '28px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                width: '54px',
-                height: '54px',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '4px 4px 0px 0px #111111',
-                zIndex: 100,
-                background: 'var(--bg-surface)',
-                cursor: 'pointer'
-              }}
-              title="Anterior (Flecha Izquierda)"
-            >
-              <ChevronLeft size={28} />
-            </button>
+            <div style={{
+              position: 'absolute',
+              left: '28px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              zIndex: 100
+            }}>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (onNavigate) onNavigate(pageIndex - 1);
+                }}
+                className="btn btn-secondary"
+                style={{
+                  width: '54px',
+                  height: '54px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '4px 4px 0px 0px #111111',
+                  background: 'var(--bg-surface)',
+                  cursor: 'pointer'
+                }}
+                title="Anterior (Flecha Izquierda)"
+              >
+                <ChevronLeft size={28} />
+              </button>
+            </div>
           )}
 
           {/* Polaroid Container around Image */}
@@ -323,34 +326,37 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
 
           {/* Floating Right Arrow */}
           {pageIndex < totalCount - 1 && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (onNavigate) onNavigate(pageIndex + 1);
-              }}
-              className="btn btn-secondary"
-              style={{
-                position: 'absolute',
-                right: '28px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                width: '54px',
-                height: '54px',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '4px 4px 0px 0px #111111',
-                zIndex: 100,
-                background: 'var(--bg-surface)',
-                cursor: 'pointer'
-              }}
-              title="Siguiente (Flecha Derecha)"
-            >
-              <ChevronRight size={28} />
-            </button>
+            <div style={{
+              position: 'absolute',
+              right: '28px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              zIndex: 100
+            }}>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (onNavigate) onNavigate(pageIndex + 1);
+                }}
+                className="btn btn-secondary"
+                style={{
+                  width: '54px',
+                  height: '54px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '4px 4px 0px 0px #111111',
+                  background: 'var(--bg-surface)',
+                  cursor: 'pointer'
+                }}
+                title="Siguiente (Flecha Derecha)"
+              >
+                <ChevronRight size={28} />
+              </button>
+            </div>
           )}
         </div>
       </div>
