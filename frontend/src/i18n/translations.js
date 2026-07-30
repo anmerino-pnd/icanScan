@@ -103,7 +103,13 @@ export const translations = {
       bwLabel: "Filtro Blanco/Negro",
       bwSub: "Umbral de alto contraste instantáneo",
       confirmSave: "Confirmar y Guardar Hoja",
-      resetValues: "Restablecer Valores"
+      resetValues: "Restablecer Valores",
+      unsavedChanges: "Cambios sin guardar",
+      discardTitle: "Cambios Sin Guardar",
+      discardMessage: "Tienes ajustes ópticos pendientes que no se han guardado. ¿Qué deseas hacer?",
+      saveAndExit: "Guardar y Salir",
+      discardChanges: "Descartar Cambios",
+      cancelClose: "Cancelar"
     },
     compressor: {
       title: "Compresión y Reducción Inteligente para Cloud Drive",
@@ -310,7 +316,13 @@ export const translations = {
       bwLabel: "Black & White Filter",
       bwSub: "Instant high-contrast threshold",
       confirmSave: "Confirm & Save Sheet",
-      resetValues: "Reset Values"
+      resetValues: "Reset Values",
+      unsavedChanges: "Unsaved changes",
+      discardTitle: "Unsaved Changes",
+      discardMessage: "You have pending optical adjustments that haven't been saved. What would you like to do?",
+      saveAndExit: "Save & Exit",
+      discardChanges: "Discard Changes",
+      cancelClose: "Cancel"
     },
     compressor: {
       title: "Smart Cloud Drive Compression & Reduction",
