@@ -100,8 +100,8 @@ export default function PdfCompressorView({ onShowModal }) {
       }
     } else {
       onShowModal && onShowModal({
-        title: "Aviso de Selección",
-        message: "Por favor utiliza la aplicación de escritorio para poder procesar archivos pesados del sistema operativo en caché de manera rápida."
+        title: t('compressor.desktopNoticeTitle'),
+        message: t('compressor.desktopNoticeMsg')
       });
     }
     setLoading(false);
@@ -124,21 +124,21 @@ export default function PdfCompressorView({ onShowModal }) {
         const data = await res.json();
         setFiles(data.files || []);
         onShowModal && onShowModal({
-          title: "Compresión Exitosa",
-          message: `Se ha procesado y optimizado el tamaño de ${targetFileIds.length} documento(s) para Google Drive exitosamente.`
+          title: t('compressor.successTitle'),
+          message: t('compressor.successMsg', { count: targetFileIds.length })
         });
       } else {
         const err = await res.json();
         onShowModal && onShowModal({
-          title: "Error de Compresión",
-          message: err.detail || "Hubo un problema al reducir los archivos PDF."
+          title: t('compressor.errorTitle'),
+          message: err.detail || t('compressor.errorMsg')
         });
       }
     } catch (err) {
       console.error(err);
       onShowModal && onShowModal({
-        title: "Error de Conexión",
-        message: "No se pudo conectar con el motor de optimización PDF."
+        title: t('compressor.connErrorTitle'),
+        message: t('compressor.connErrorMsg')
       });
     } finally {
       setCompressing(false);
@@ -172,7 +172,7 @@ export default function PdfCompressorView({ onShowModal }) {
             body: JSON.stringify({ source_url: url, target_path: chosenPath })
           });
           if (res.ok) {
-            onShowModal && onShowModal({ title: "PDF Guardado", message: `El documento comprimido se ha guardado exitosamente en:\n${chosenPath}` });
+            onShowModal && onShowModal({ title: t('compressor.savedTitle'), message: t('compressor.savedMsg', { path: chosenPath }) });
           }
         }
         return;
@@ -325,17 +325,17 @@ export default function PdfCompressorView({ onShowModal }) {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '26px', fontFamily: 'Patrick Hand, cursive' }}>
           <div>
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'block' }}>Peso Original Total</span>
+            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'block' }}>{t('compressor.totalOriginal')}</span>
             <strong style={{ fontSize: '1.3rem', color: 'var(--text-primary)', fontFamily: 'Kalam, cursive' }}>{totalOriginalMb} MB</strong>
           </div>
           <div>
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'block' }}>Peso Final Optimizado</span>
+            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'block' }}>{t('compressor.totalFinal')}</span>
             <strong style={{ fontSize: '1.3rem', color: 'var(--accent-blue)', fontFamily: 'Kalam, cursive' }}>{totalFinalMb} MB</strong>
           </div>
           <div>
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'block' }}>Alerta Drive (&gt; 25MB)</span>
+            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'block' }}>{t('compressor.driveAlert')}</span>
             <strong style={{ fontSize: '1.3rem', color: exceedsCount > 0 ? 'var(--accent-red)' : 'var(--accent-green)', fontFamily: 'Kalam, cursive' }}>
-              {exceedsCount} {exceedsCount === 1 ? 'documento excede' : 'documentos exceden'}
+              {exceedsCount} {exceedsCount === 1 ? t('compressor.docsExceedSingular') : t('compressor.docsExceedPlural')}
             </strong>
           </div>
           {files.length > 0 && (
@@ -366,13 +366,13 @@ export default function PdfCompressorView({ onShowModal }) {
             <div className="tape-decoration" />
             <FileText size={56} color="var(--accent-red)" style={{ marginBottom: '16px' }} />
             <h3 style={{ fontFamily: 'Kalam, cursive', fontSize: '1.6rem', color: 'var(--text-primary)', margin: '0 0 8px 0' }}>
-              No hay documentos PDF seleccionados en este momento
+              {t('compressor.emptyTitle')}
             </h3>
             <p style={{ color: 'var(--text-secondary)', fontSize: '1.15rem', maxWidth: '460px', textAlign: 'center', margin: '0 0 24px 0', fontFamily: 'Patrick Hand, cursive' }}>
-              Añade tus archivos PDF para verificar cuánto peso ocupan y comprimirlos en grupo para que quepan en Google Drive o correo.
+              {t('compressor.emptyDesc')}
             </p>
             <button onClick={handleSelectFiles} className="btn btn-secondary" style={{ padding: '12px 24px' }}>
-              <FolderOpen size={18} /> Abrir Documentos PDF
+              <FolderOpen size={18} /> {t('compressor.openPdfsBtn')}
             </button>
           </div>
         ) : (
@@ -395,13 +395,13 @@ export default function PdfCompressorView({ onShowModal }) {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '14px', fontSize: '1rem', fontFamily: 'Patrick Hand, cursive', flexWrap: 'wrap' }}>
                       {file.page_count > 0 && (
                         <span style={{ background: 'var(--bg-card)', padding: '2px 8px', borderRadius: '4px', border: '1px solid var(--border-lead)', fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.9rem' }}>
-                          TOTAL: {file.page_count} PÁG{file.page_count !== 1 ? 'S' : ''}
+                          {t('tools.pagesTotal', { count: file.page_count })}
                         </span>
                       )}
-                      <span style={{ color: 'var(--text-secondary)' }}>Original: {file.original_size_mb} MB</span>
+                      <span style={{ color: 'var(--text-secondary)' }}>{t('compressor.originalWeight')} {file.original_size_mb} MB</span>
                       {isCompressed && (
                         <span style={{ color: 'var(--accent-blue)', fontWeight: 600 }}>
-                          Final: {file.compressed_size_mb} MB ({reductionPct}% reducido)
+                          {t('compressor.reducedWeight')} {file.compressed_size_mb} MB ({reductionPct}% {t('compressor.reducedWord')})
                         </span>
                       )}
                     </div>
@@ -412,11 +412,11 @@ export default function PdfCompressorView({ onShowModal }) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
                   {exceeds ? (
                     <span className="stamp-badge" style={{ background: 'rgba(255, 77, 77, 0.15)', color: 'var(--accent-red)', transform: 'rotate(-2deg)' }}>
-                      <AlertTriangle size={16} /> Mayor a 25 MB (Drive)
+                      <AlertTriangle size={16} /> {t('compressor.badgeExceeds')}
                     </span>
                   ) : (
                     <span className="stamp-badge" style={{ background: 'rgba(22, 163, 74, 0.15)', color: 'var(--accent-green)', transform: 'rotate(1deg)' }}>
-                      <CheckCircle2 size={16} /> Apto para Drive (&lt; 25 MB)
+                      <CheckCircle2 size={16} /> {t('compressor.badgeOk')}
                     </span>
                   )}
 
@@ -464,10 +464,10 @@ export default function PdfCompressorView({ onShowModal }) {
             <Archive size={28} color="var(--accent-blue)" />
             <div>
               <strong style={{ fontSize: '1.3rem', display: 'block', color: 'var(--text-primary)', fontFamily: 'Kalam, cursive' }}>
-                Paquete Consolidado .ZIP
+                {t('compressor.zipTitle')}
               </strong>
               <span style={{ fontSize: '1rem', color: 'var(--text-secondary)', fontFamily: 'Patrick Hand, cursive' }}>
-                Descarga en un solo archivo todos los documentos PDF optimizados para subir o enviar juntos.
+                {t('compressor.zipDesc')}
               </span>
             </div>
           </div>
@@ -478,7 +478,7 @@ export default function PdfCompressorView({ onShowModal }) {
             style={{ padding: '14px 28px', fontSize: '1.25rem', fontFamily: 'Kalam, cursive', fontWeight: 700, background: 'var(--accent-red)', color: '#ffffff', boxShadow: '4px 4px 0px 0px #2d2d2d' }}
           >
             <Archive size={20} />
-            Descargar Archivo .ZIP ({files.length} {files.length === 1 ? 'doc' : 'docs'})
+            {t('compressor.downloadZipBtn', { count: files.length, label: files.length === 1 ? 'doc' : 'docs' })}
           </button>
         </div>
       )}
