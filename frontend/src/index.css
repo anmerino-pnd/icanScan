@@ -689,6 +689,26 @@ select:focus, input[type="text"]:focus, input[type="number"]:focus {
   min-height: 0;
 }
 
+/* Fix 12: Scroll container inside the canvas area */
+.studio-canvas-scroll {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  display: flex; /* allows margin:auto to center child, but align-items flex-start avoids top clipping */
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 40px;
+}
+
+/* Fix 13: Fade-in on image remount to prevent flicker */
+@keyframes studio-image-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.studio-canvas-scroll img {
+  animation: studio-image-fade-in 150ms ease;
+}
+
 /* Fix 2: LQIP blur transition — thumbnail shown instantly, blur fades when full-res loads */
 .studio-canvas-area img {
   transition: filter 150ms ease, transform 0.15s ease;

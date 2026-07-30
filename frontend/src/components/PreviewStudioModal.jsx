@@ -26,6 +26,9 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
   
   const [isApplying, setIsApplying] = useState(false);
   const [zoom, setZoom] = useState(1.0);
+  const [isFitMode, setIsFitMode] = useState(true);
+  const [imgDims, setImgDims] = useState({ w: 0, h: 0 });
+  const canvasAreaRef = useRef(null);
 
   // Fix 1: Discard confirmation dialog state
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
@@ -33,6 +36,10 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
   // Fix 2: LQIP — thumbnail as instant placeholder, full-res loads in background
   const [displaySrc, setDisplaySrc] = useState(page.thumbnail_url || page.preview_url);
   const [isFullResLoaded, setIsFullResLoaded] = useState(false);
+
+  // PART 2 DIAGNOSTICS: log render cycles
+  console.log(`[RENDER] pageId=${page.id} displaySrc=${displaySrc.split('?')[0].slice(-20)} rotation=${rotation} brightness=${brightness} contrast=${contrast} bw=${bwFilter}`, performance.now());
+
 
   // Sequence guard: tracks the latest request to discard stale responses (H7/Priority 4)
   const requestSeqRef = useRef(0);
@@ -52,11 +59,12 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
 
   // Sync state whenever page changes via navigation arrows
   useEffect(() => {
+    console.log(`[EFFECT page.id=${page.id}] Resetting state and LQIP`, performance.now());
     setRotation(page.rotation || 0);
     setBrightness(page.brightness || 0.0);
     setContrast(page.contrast || 0.0);
     setBwFilter(page.bw_filter || false);
-    setZoom(1.0);
+    setIsFitMode(true);
     setIsApplying(false);
     setShowDiscardConfirm(false);
 
@@ -76,12 +84,52 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
     const fullSrc = `${API_BASE}${fullUrl.includes('?') ? fullUrl : `${fullUrl}?v=${page.id}`}`;
     fullImg.src = fullSrc;
     fullImg.onload = () => {
+      console.log(`[ONLOAD full-res] pageId=${page.id}`, performance.now());
       setDisplaySrc(fullUrl);
       setIsFullResLoaded(true);
     };
 
     return () => { fullImg.onload = null; };
   }, [page.id]);
+
+  // Fit Mode recalculation
+  useEffect(() => {
+    if (!isFitMode) return;
+    
+    let observer;
+    const doFit = () => {
+      if (!isFitMode || !canvasAreaRef.current || !imgDims.w) return;
+      const { clientWidth, clientHeight } = canvasAreaRef.current;
+      
+      const padding = 64; 
+      const availableWidth = clientWidth - padding;
+      const availableHeight = clientHeight - padding;
+      
+      const bakedRotation = page.rotation || 0;
+      const deltaRot = rotation - bakedRotation;
+      const isSideways = (Math.abs(deltaRot) % 180 === 90);
+      
+      const contentW = isSideways ? imgDims.h : imgDims.w;
+      const contentH = isSideways ? imgDims.w : imgDims.h;
+      
+      const targetW = availableWidth - 38;
+      const targetH = availableHeight - 38;
+      
+      const scaleW = targetW / contentW;
+      const scaleH = targetH / contentH;
+      const scale = Math.min(scaleW, scaleH, 3.0);
+      
+      setZoom(scale);
+    };
+
+    if (canvasAreaRef.current) {
+      observer = new ResizeObserver(() => doFit());
+      observer.observe(canvasAreaRef.current);
+    }
+    
+    doFit();
+    return () => observer?.disconnect();
+  }, [isFitMode, rotation, page.rotation, imgDims]);
 
   // Keyboard navigation shortcuts
   useEffect(() => {
@@ -239,7 +287,7 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
           {/* Zoom Toolbar */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <button 
-              onClick={() => setZoom(z => Math.max(0.5, z - 0.25))} 
+              onClick={() => { setZoom(z => Math.max(0.1, z - 0.25)); setIsFitMode(false); }} 
               className="btn btn-secondary" 
               style={{ padding: '8px 12px' }}
               title={t('studio.zoomOut')}
@@ -248,7 +296,7 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
             </button>
             <span style={{ fontSize: '1.1rem', width: '60px', textAlign: 'center', fontWeight: 700, fontFamily: 'Kalam, cursive' }}>{Math.round(zoom * 100)}%</span>
             <button 
-              onClick={() => setZoom(z => Math.min(3.0, z + 0.25))} 
+              onClick={() => { setZoom(z => Math.min(5.0, z + 0.25)); setIsFitMode(false); }} 
               className="btn btn-secondary" 
               style={{ padding: '8px 12px' }}
               title={t('studio.zoomIn')}
@@ -256,8 +304,8 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
               <ZoomIn size={18} />
             </button>
             <button 
-              onClick={() => setZoom(1.0)} 
-              className="btn btn-secondary" 
+              onClick={() => setIsFitMode(true)} 
+              className={`btn ${isFitMode ? 'btn-primary' : 'btn-secondary'}`} 
               style={{ padding: '8px 14px', fontSize: '0.95rem' }}
               title={t('studio.fit')}
             >
@@ -267,7 +315,7 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
         </div>
 
         {/* Canvas Image Area — fixed-size container, image scales inside */}
-        <div className="studio-canvas-area" style={{
+        <div className="studio-canvas-area" ref={canvasAreaRef} style={{
           background: 'radial-gradient(circle at center, #3d3d3d 0%, #1e1e1e 100%)'
         }}>
           {/* Floating Left Arrow */}
@@ -305,23 +353,40 @@ export default function PreviewStudioModal({ page, pageIndex, totalCount = 1, on
             </div>
           )}
 
-          {/* Polaroid Container around Image */}
-          <div className="paper-card" style={{ padding: '16px', background: '#ffffff', border: '3px solid var(--border-lead)', boxShadow: '10px 10px 0px 0px #111111', maxWidth: '80%', maxHeight: '90%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <img 
-              src={imgSrc} 
-              alt="Hoja en previsualización" 
-              className={isFullResLoaded ? '' : 'loading-fullres'}
-              style={{
-                maxHeight: '100%',
-                maxWidth: '100%',
-                objectFit: 'contain',
-                filter: cssFilter,
-                transform: cssTransform,
-                transformOrigin: 'center center',
-                transition: 'transform 0.15s ease, filter 0.15s ease',
-                display: 'block'
-              }}
-            />
+          <div className="studio-canvas-scroll">
+            {/* Polaroid Container around Image */}
+            <div key={page.id} className="paper-card" style={{ 
+              padding: '16px', 
+              background: '#ffffff', 
+              border: '3px solid var(--border-lead)', 
+              boxShadow: '10px 10px 0px 0px #111111', 
+              width: `${(Math.abs(deltaRotation) % 180 === 90 ? imgDims.h : imgDims.w) * zoom + 38}px`,
+              height: `${(Math.abs(deltaRotation) % 180 === 90 ? imgDims.w : imgDims.h) * zoom + 38}px`,
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              margin: 'auto',
+              flexShrink: 0,
+              transition: 'width 0.15s ease, height 0.15s ease'
+            }}>
+              <div style={{ width: 0, height: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <img 
+                  onLoad={(e) => setImgDims({ w: e.target.naturalWidth, h: e.target.naturalHeight })}
+                  src={imgSrc} 
+                  alt="Hoja en previsualización" 
+                  className={isFullResLoaded ? '' : 'loading-fullres'}
+                  style={{
+                    width: `${imgDims.w * zoom}px`,
+                    height: `${imgDims.h * zoom}px`,
+                    flexShrink: 0,
+                    filter: cssFilter,
+                    transform: `rotate(${deltaRotation}deg)`,
+                    transition: 'transform 0.15s ease, filter 0.15s ease, width 0.15s ease, height 0.15s ease',
+                    display: 'block'
+                  }}
+                />
+              </div>
+            </div>
           </div>
 
           {/* Floating Right Arrow */}
