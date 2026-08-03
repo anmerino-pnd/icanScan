@@ -42,8 +42,14 @@ async def add_no_cache_header(request, call_next):
     return response
 
 # Setup local scans cache directory
-CACHE_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), "..", "..", ".scans_cache")
-COMPRESS_CACHE_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), "..", "..", ".compress_cache")
+def get_app_data_dir() -> str:
+    app_data = os.getenv("LOCALAPPDATA")
+    if app_data:
+        return os.path.join(app_data, "iCanScan")
+    return os.path.join(os.path.expanduser("~"), ".icanscan")
+
+CACHE_DIR = os.path.join(get_app_data_dir(), "scans_cache")
+COMPRESS_CACHE_DIR = os.path.join(get_app_data_dir(), "compress_cache")
 os.makedirs(CACHE_DIR, exist_ok=True)
 os.makedirs(COMPRESS_CACHE_DIR, exist_ok=True)
 

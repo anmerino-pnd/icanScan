@@ -1,6 +1,6 @@
 {
   "name": "icanscan-studio",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "iCanScan Studio - El Escáner y Suite PDF Sketchbook de Alta Calidad",
   "author": "Angel Merino <acedeno00@gmail.com>",
   "private": true,
@@ -29,9 +29,8 @@
     ],
     "extraResources": [
       {
-        "from": "../dist-backend/icanscan-backend",
-        "to": "backend/icanscan-backend",
-        "filter": ["**/*"]
+        "from": "../dist-backend/icanscan-backend.exe",
+        "to": "backend/icanscan-backend/icanscan-backend.exe"
       }
     ],
     "win": {

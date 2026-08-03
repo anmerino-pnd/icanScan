@@ -6,8 +6,14 @@ import fitz  # PyMuPDF
 from PIL import Image
 import img2pdf
 
+def get_app_data_dir() -> str:
+    app_data = os.getenv("LOCALAPPDATA")
+    if app_data:
+        return os.path.join(app_data, "iCanScan")
+    return os.path.join(os.path.expanduser("~"), ".icanscan")
+
 def _get_tools_cache_dir() -> str:
-    base = os.path.join(os.path.abspath(os.path.dirname(__file__)), "..", "..", ".scans_cache", "tools")
+    base = os.path.join(get_app_data_dir(), "scans_cache", "tools")
     os.makedirs(base, exist_ok=True)
     return base
 

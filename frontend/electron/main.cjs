@@ -1,10 +1,12 @@
 const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
+const fs = require('fs');
 const { spawn, execSync } = require('child_process');
 const http = require('http');
 
 let mainWindow;
 let serverProcess = null;
+let backendLogOutput = '';
 
 function killPort8000() {
   try {
@@ -46,7 +48,7 @@ function startPythonBackend() {
     console.log('Starting packaged Python standalone backend from:', backendExe);
     serverProcess = spawn(backendExe, ['--host', '127.0.0.1', '--port', '8000'], {
       shell: false,
-      stdio: 'inherit'
+      stdio: 'pipe'
     });
   } else {
     const rootDir = path.join(__dirname, '..', '..');
@@ -54,11 +56,26 @@ function startPythonBackend() {
     serverProcess = spawn('uv', ['run', 'python', '-m', 'uvicorn', 'icanscan.main:app', '--host', '127.0.0.1', '--port', '8000'], {
       cwd: rootDir,
       shell: true,
-      stdio: 'inherit'
+      stdio: 'pipe'
+    });
+  }
+
+  if (serverProcess.stdout) {
+    serverProcess.stdout.on('data', (data) => {
+      backendLogOutput += data.toString();
+      console.log(data.toString());
+    });
+  }
+  
+  if (serverProcess.stderr) {
+    serverProcess.stderr.on('data', (data) => {
+      backendLogOutput += data.toString();
+      console.error(data.toString());
     });
   }
 
   serverProcess.on('error', (err) => {
+    backendLogOutput += `\nError spawning backend: ${err.message}`;
     console.error('Failed to spawn Python backend:', err);
   });
 }
@@ -110,9 +127,16 @@ app.whenReady().then(async () => {
     createWindow();
   } catch (err) {
     console.error('Error al conectar con el backend:', err);
+    
+    // Save log to file
+    const logDir = path.join(process.env.LOCALAPPDATA || require('os').homedir(), 'iCanScan', 'logs');
+    fs.mkdirSync(logDir, { recursive: true });
+    const logPath = path.join(logDir, 'startup-error.log');
+    fs.writeFileSync(logPath, backendLogOutput || 'No hay logs disponibles del backend.');
+
     dialog.showErrorBox(
       'Error de Inicio - Doc Scan PDF Scanner',
-      'No se pudo conectar con el servidor backend de Python.\nPor favor verifica la consola (terminal) para ver el error de inicio de uvicorn/python.'
+      `No se pudo conectar con el servidor backend de Python.\nRevisa el archivo de log para más detalles:\n${logPath}`
     );
     app.quit();
   }

@@ -9,7 +9,13 @@ from typing import List, Dict, Any, Optional
 
 logger = logging.getLogger(__name__)
 
-COMPRESS_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), "..", "..", ".compress_cache")
+def get_app_data_dir() -> str:
+    app_data = os.getenv("LOCALAPPDATA")
+    if app_data:
+        return os.path.join(app_data, "iCanScan")
+    return os.path.join(os.path.expanduser("~"), ".icanscan")
+
+COMPRESS_DIR = os.path.join(get_app_data_dir(), "compress_cache")
 os.makedirs(COMPRESS_DIR, exist_ok=True)
 
 # In-memory registry of uploaded/compressed files during the session
