@@ -4,6 +4,23 @@ const fs = require('fs');
 const { spawn, execSync } = require('child_process');
 const http = require('http');
 
+process.on('uncaughtException', (err) => {
+  try {
+    fs.writeFileSync(
+      path.join(app.getPath('temp'), 'icanscan-crash.log'),
+      `${new Date().toISOString()}\n${err.stack || err}\n`
+    );
+  } catch (e) { /* silent fail */ }
+});
+process.on('unhandledRejection', (reason, promise) => {
+  try {
+    fs.writeFileSync(
+      path.join(app.getPath('temp'), 'icanscan-rejection.log'),
+      `${new Date().toISOString()}\n${reason.stack || reason}\n`
+    );
+  } catch (e) { /* silent fail */ }
+});
+
 let mainWindow;
 let serverProcess = null;
 let backendLogOutput = '';
@@ -124,15 +141,26 @@ app.whenReady().then(async () => {
     console.log('Esperando a que el servidor de Python inicie en el puerto 8000...');
     await waitForServer('http://127.0.0.1:8000');
     console.log('¡Servidor Python listo! Abriendo ventana de la aplicación...');
+    try {
+      fs.appendFileSync(path.join(app.getPath('temp'), 'icanscan-crash.log'), `${new Date().toISOString()} [DIAGNOSTIC] Intentando createWindow()\n`);
+    } catch(e){}
     createWindow();
+    try {
+      fs.appendFileSync(path.join(app.getPath('temp'), 'icanscan-crash.log'), `${new Date().toISOString()} [DIAGNOSTIC] createWindow() ejecutado con éxito\n`);
+    } catch(e){}
   } catch (err) {
     console.error('Error al conectar con el backend:', err);
     
-    // Save log to file
-    const logDir = path.join(process.env.LOCALAPPDATA || require('os').homedir(), 'iCanScan', 'logs');
-    fs.mkdirSync(logDir, { recursive: true });
-    const logPath = path.join(logDir, 'startup-error.log');
-    fs.writeFileSync(logPath, backendLogOutput || 'No hay logs disponibles del backend.');
+    // Save log to file safely
+    let logPath = 'Ubicación no disponible (error de escritura)';
+    try {
+      const logDir = path.join(process.env.LOCALAPPDATA || require('os').homedir(), 'iCanScan', 'logs');
+      fs.mkdirSync(logDir, { recursive: true });
+      logPath = path.join(logDir, 'startup-error.log');
+      fs.writeFileSync(logPath, backendLogOutput || 'No hay logs disponibles del backend.');
+    } catch (fsErr) {
+      console.error('Error al intentar guardar el log de inicio:', fsErr);
+    }
 
     dialog.showErrorBox(
       'Error de Inicio - Doc Scan PDF Scanner',
