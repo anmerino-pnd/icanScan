@@ -62,10 +62,13 @@ function startPythonBackend() {
   
   if (app.isPackaged) {
     const backendExe = path.join(process.resourcesPath, 'backend', 'icanscan-backend', process.platform === 'win32' ? 'icanscan-backend.exe' : 'icanscan-backend');
+    const frontendDistPath = path.join(process.resourcesPath, 'frontend_dist');
     console.log('Starting packaged Python standalone backend from:', backendExe);
-    serverProcess = spawn(backendExe, ['--host', '127.0.0.1', '--port', '8000'], {
+    console.log('Frontend dist path:', frontendDistPath);
+    serverProcess = spawn(backendExe, [], {
       shell: false,
-      stdio: 'pipe'
+      stdio: 'pipe',
+      env: { ...process.env, FRONTEND_DIST_PATH: frontendDistPath }
     });
   } else {
     const rootDir = path.join(__dirname, '..', '..');

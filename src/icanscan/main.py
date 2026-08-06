@@ -625,10 +625,17 @@ def download_tool_file(task_id: str, filename: str):
         raise HTTPException(status_code=400, detail="Ruta inválida")
     return FileResponse(path=file_path, filename=filename)
 
-# Mount built React frontend static distribution if built
-FRONTEND_DIST = os.path.join(os.path.abspath(os.path.dirname(__file__)), "..", "..", "frontend", "dist")
-if os.path.exists(FRONTEND_DIST):
+# Mount built React frontend static distribution
+# In packaged mode, Electron passes the real path via env var; in dev, use the relative path.
+FRONTEND_DIST = os.environ.get(
+    "FRONTEND_DIST_PATH",
+    os.path.join(os.path.abspath(os.path.dirname(__file__)), "..", "..", "frontend", "dist")
+)
+if os.path.isdir(FRONTEND_DIST):
+    logger.info(f"Mounting frontend static files from: {FRONTEND_DIST}")
     app.mount("/", StaticFiles(directory=FRONTEND_DIST, html=True), name="frontend")
+else:
+    logger.error(f"FRONTEND_DIST directory does NOT exist: {FRONTEND_DIST}. The UI will not load.")
 
 class DesktopApi:
     def __init__(self):
